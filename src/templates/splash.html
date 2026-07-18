@@ -1,0 +1,542 @@
+{% extends "base.html" %}
+{% block title %}KIET Group of Institutions{% endblock %}
+
+{% block extra_head %}
+<style>
+    /* Hide matrix for splash - we have our own animation */
+    #matrixCanvas { display: none !important; }
+    .main-wrapper { display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+
+    /* ── Splash Container ── */
+    .splash-screen {
+        text-align: center;
+        position: relative;
+        z-index: 10;
+        padding: 40px;
+    }
+
+    /* ── Cyber Shield Logo ── */
+    .splash-logo {
+        width: 120px;
+        height: 120px;
+        margin: 0 auto 30px;
+        position: relative;
+        animation: logoEntry 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        opacity: 0;
+    }
+    .splash-logo .shield-outer {
+        width: 120px;
+        height: 120px;
+        border: 3px solid #00FF00;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        animation: shieldRotate 4s linear infinite;
+        box-shadow: 0 0 30px rgba(0,255,0,0.3), inset 0 0 30px rgba(0,255,0,0.1);
+    }
+    .shield-outer::before {
+        content: '';
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        border: 2px dashed rgba(0,255,0,0.3);
+        animation: shieldRotate 6s linear infinite reverse;
+    }
+    .splash-logo i {
+        font-size: 50px;
+        color: #00FF00;
+        text-shadow: 0 0 20px #00FF00, 0 0 40px rgba(0,255,0,0.4);
+        animation: iconPulse 2s ease-in-out infinite;
+    }
+
+    @keyframes shieldRotate {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+    @keyframes iconPulse {
+        0%, 100% { transform: scale(1); filter: brightness(1); }
+        50% { transform: scale(1.1); filter: brightness(1.3); }
+    }
+    @keyframes logoEntry {
+        from { opacity: 0; transform: scale(0.3) translateY(-40px); }
+        to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    /* ── College Name ── */
+    .college-name {
+        font-family: 'Orbitron', sans-serif;
+        font-size: 32px;
+        font-weight: 900;
+        letter-spacing: 5px;
+        color: #00FF00;
+        text-shadow: 0 0 10px rgba(0,255,0,0.5), 0 0 30px rgba(0,255,0,0.2);
+        margin-bottom: 10px;
+        opacity: 0;
+        animation: textReveal 1s ease forwards 0.6s;
+        position: relative;
+    }
+    .college-name::after {
+        content: '';
+        position: absolute;
+        bottom: -8px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 0;
+        height: 2px;
+        background: linear-gradient(90deg, transparent, #00FF00, transparent);
+        animation: lineExpand 1.5s ease forwards 1.2s;
+    }
+
+    @keyframes textReveal {
+        from { opacity: 0; transform: translateY(20px); letter-spacing: 15px; }
+        to { opacity: 1; transform: translateY(0); letter-spacing: 5px; }
+    }
+    @keyframes lineExpand {
+        from { width: 0; }
+        to { width: 80%; }
+    }
+
+    /* ── Subtitle ── */
+    .college-subtitle {
+        font-family: 'Share Tech Mono', monospace;
+        font-size: 13px;
+        color: #00cc88;
+        letter-spacing: 3px;
+        margin-top: 18px;
+        opacity: 0;
+        animation: fadeUp 0.8s ease forwards 1s;
+    }
+
+    @keyframes fadeUp {
+        from { opacity: 0; transform: translateY(15px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── Project Title ── */
+    .project-title {
+        font-family: 'Share Tech Mono', monospace;
+        font-size: 14px;
+        color: #888;
+        margin-top: 35px;
+        padding: 12px 25px;
+        border: 1px solid rgba(0,255,0,0.2);
+        border-radius: 8px;
+        background: rgba(0,255,0,0.03);
+        display: inline-block;
+        opacity: 0;
+        animation: fadeUp 0.8s ease forwards 1.4s;
+        letter-spacing: 1px;
+    }
+    .project-title span {
+        color: #00FF00;
+    }
+
+    /* ── Scanning Line ── */
+    .scan-line {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 3px;
+        background: linear-gradient(90deg, transparent, #00FF00, transparent);
+        box-shadow: 0 0 15px #00FF00;
+        animation: scanDown 2.5s ease-in-out infinite;
+        opacity: 0.6;
+    }
+    @keyframes scanDown {
+        0% { top: 0; }
+        50% { top: 100%; }
+        100% { top: 0; }
+    }
+
+    /* ── Corner Decorations ── */
+    .corner { position: fixed; width: 60px; height: 60px; opacity: 0; animation: cornerFade 0.5s ease forwards; }
+    .corner-tl { top: 20px; left: 20px; border-top: 2px solid #00FF00; border-left: 2px solid #00FF00; animation-delay: 0.3s; }
+    .corner-tr { top: 20px; right: 20px; border-top: 2px solid #00FF00; border-right: 2px solid #00FF00; animation-delay: 0.5s; }
+    .corner-bl { bottom: 20px; left: 20px; border-bottom: 2px solid #00FF00; border-left: 2px solid #00FF00; animation-delay: 0.7s; }
+    .corner-br { bottom: 20px; right: 20px; border-bottom: 2px solid #00FF00; border-right: 2px solid #00FF00; animation-delay: 0.9s; }
+    @keyframes cornerFade {
+        from { opacity: 0; transform: scale(0.5); }
+        to { opacity: 0.5; transform: scale(1); }
+    }
+
+    /* ── Particles ── */
+    .particles {
+        position: fixed;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        pointer-events: none;
+        z-index: 0;
+        overflow: hidden;
+    }
+    .particle {
+        position: absolute;
+        width: 3px; height: 3px;
+        background: #00FF00;
+        border-radius: 50%;
+        opacity: 0;
+        animation: particleFloat 4s ease-in-out infinite;
+    }
+
+    @keyframes particleFloat {
+        0% { opacity: 0; transform: translateY(100vh) scale(0); }
+        50% { opacity: 0.7; }
+        100% { opacity: 0; transform: translateY(-20px) scale(1); }
+    }
+
+    /* ── Click Gate ── */
+    .click-gate {
+        position: fixed;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        background: radial-gradient(ellipse at center, rgba(0,20,0,0.95) 0%, #000 75%);
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: opacity 0.6s, visibility 0.6s;
+    }
+    .click-gate.hidden {
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+    }
+
+    /* Popup Card */
+    .gate-popup {
+        text-align: center;
+        background: rgba(0, 15, 5, 0.85);
+        border: 1px solid rgba(0,255,0,0.25);
+        border-radius: 18px;
+        padding: 45px 50px 40px;
+        max-width: 440px;
+        width: 90%;
+        box-shadow: 0 0 60px rgba(0,255,0,0.1), inset 0 0 40px rgba(0,255,0,0.03);
+        animation: popupEntry 0.8s cubic-bezier(0.16,1,0.3,1) forwards;
+        position: relative;
+        overflow: hidden;
+    }
+    .gate-popup::before {
+        content: '';
+        position: absolute;
+        top: -1px; left: -50%;
+        width: 200%; height: 2px;
+        background: linear-gradient(90deg, transparent, #00FF00, transparent);
+        animation: popupScan 3s linear infinite;
+    }
+    @keyframes popupEntry {
+        from { opacity: 0; transform: scale(0.8) translateY(30px); }
+        to   { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    @keyframes popupScan {
+        from { left: -200%; }
+        to   { left: 200%; }
+    }
+
+    /* Shield */
+    .gate-shield {
+        width: 80px; height: 80px;
+        margin: 0 auto 22px;
+        border: 2px solid #00FF00;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        animation: gatePulse 2.2s ease-in-out infinite;
+        box-shadow: 0 0 25px rgba(0,255,0,0.2);
+    }
+    .gate-shield i {
+        font-size: 34px;
+        color: #00FF00;
+        text-shadow: 0 0 15px rgba(0,255,0,0.5);
+    }
+    @keyframes gatePulse {
+        0%, 100% { box-shadow: 0 0 15px rgba(0,255,0,0.15); transform: scale(1); }
+        50%      { box-shadow: 0 0 40px rgba(0,255,0,0.4); transform: scale(1.06); }
+    }
+
+    /* Welcome Heading */
+    .gate-welcome {
+        font-family: 'Share Tech Mono', monospace;
+        font-size: 13px;
+        color: #00cc88;
+        letter-spacing: 3px;
+        text-transform: uppercase;
+        margin-bottom: 6px;
+    }
+    .gate-title {
+        font-family: 'Orbitron', sans-serif;
+        font-size: 22px;
+        font-weight: 900;
+        color: #00FF00;
+        letter-spacing: 4px;
+        text-shadow: 0 0 12px rgba(0,255,0,0.4);
+        margin-bottom: 8px;
+    }
+    .gate-divider {
+        width: 120px;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, #00FF00, transparent);
+        margin: 14px auto;
+        opacity: 0.5;
+    }
+    .gate-sub {
+        font-family: 'Share Tech Mono', monospace;
+        font-size: 11px;
+        color: #555;
+        letter-spacing: 2px;
+        margin-bottom: 30px;
+        line-height: 1.6;
+    }
+
+    /* Initialize Button */
+    .gate-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 32px;
+        background: linear-gradient(135deg, #001a00, #003300);
+        border: 1px solid #00FF00;
+        border-radius: 8px;
+        color: #00FF00;
+        font-family: 'Orbitron', sans-serif;
+        font-size: 12px;
+        letter-spacing: 3px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-shadow: 0 0 6px rgba(0,255,0,0.3);
+    }
+    .gate-btn:hover {
+        background: linear-gradient(135deg, #002a00, #005500);
+        box-shadow: 0 0 25px rgba(0,255,0,0.3);
+        transform: translateY(-2px);
+    }
+    .gate-btn i {
+        font-size: 14px;
+        animation: blink 1.2s step-end infinite;
+    }
+
+    /* Corner marks on popup */
+    .gate-corner { position: absolute; width: 18px; height: 18px; }
+    .gate-corner.gc-tl { top: 10px; left: 10px; border-top: 2px solid rgba(0,255,0,0.4); border-left: 2px solid rgba(0,255,0,0.4); }
+    .gate-corner.gc-tr { top: 10px; right: 10px; border-top: 2px solid rgba(0,255,0,0.4); border-right: 2px solid rgba(0,255,0,0.4); }
+    .gate-corner.gc-bl { bottom: 10px; left: 10px; border-bottom: 2px solid rgba(0,255,0,0.4); border-left: 2px solid rgba(0,255,0,0.4); }
+    .gate-corner.gc-br { bottom: 10px; right: 10px; border-bottom: 2px solid rgba(0,255,0,0.4); border-right: 2px solid rgba(0,255,0,0.4); }
+
+    /* ── Loading Bar ── */
+    .loading-section {
+        margin-top: 40px;
+        opacity: 0;
+        animation: fadeUp 0.6s ease forwards 1.8s;
+    }
+    /* When gate is active, pause splash animations */
+    .splash-paused .splash-logo,
+    .splash-paused .college-name,
+    .splash-paused .college-subtitle,
+    .splash-paused .project-title,
+    .splash-paused .loading-section,
+    .splash-paused .loading-bar-fill,
+    .splash-paused .scan-line,
+    .splash-paused .corner {
+        animation-play-state: paused !important;
+    }
+    .loading-bar-bg {
+        width: 280px;
+        height: 4px;
+        background: #1a1a2e;
+        border-radius: 4px;
+        margin: 0 auto;
+        overflow: hidden;
+    }
+    .loading-bar-fill {
+        height: 100%;
+        width: 0%;
+        background: linear-gradient(90deg, #003300, #00FF00, #00FF00);
+        border-radius: 4px;
+        box-shadow: 0 0 10px rgba(0,255,0,0.5);
+        animation: loadFill 3.5s ease-in-out forwards 1.5s;
+    }
+    @keyframes loadFill {
+        0% { width: 0%; }
+        30% { width: 35%; }
+        60% { width: 65%; }
+        85% { width: 90%; }
+        100% { width: 100%; }
+    }
+    .loading-text {
+        font-size: 11px;
+        color: #555;
+        margin-top: 10px;
+        letter-spacing: 2px;
+    }
+    .loading-text span {
+        color: #00FF00;
+        animation: blink 1s step-end infinite;
+    }
+    @keyframes blink {
+        50% { opacity: 0; }
+    }
+
+    /* ── Fade Out ── */
+    .splash-screen.fade-out {
+        animation: splashExit 0.8s ease forwards;
+    }
+    @keyframes splashExit {
+        0% { opacity: 1; transform: scale(1); }
+        100% { opacity: 0; transform: scale(1.1); filter: blur(5px); }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- ═══ Welcome Popup Gate ═══ -->
+<div class="click-gate" id="clickGate">
+    <div class="gate-popup">
+        <!-- Corner marks -->
+        <div class="gate-corner gc-tl"></div>
+        <div class="gate-corner gc-tr"></div>
+        <div class="gate-corner gc-bl"></div>
+        <div class="gate-corner gc-br"></div>
+
+        <!-- Shield Icon -->
+        <div class="gate-shield">
+            <i class="fas fa-shield-halved"></i>
+        </div>
+
+        <!-- Welcome Heading -->
+        <div class="gate-welcome">— WELCOME TO —</div>
+        <div class="gate-title">WEBSITE</div>
+        <div class="gate-divider"></div>
+        <div class="gate-sub">MULTI-LEVEL SECURED LOG ANALYSIS<br>&amp; THREAT HUNTING SYSTEM</div>
+
+        <!-- Initialize Button -->
+        <button class="gate-btn" id="gateBtn">
+            <i class="fas fa-power-off"></i> CLICK TO INITIALIZE
+        </button>
+    </div>
+</div>
+
+<!-- Scan Line -->
+<div class="scan-line"></div>
+
+<!-- Corner Decorations -->
+<div class="corner corner-tl"></div>
+<div class="corner corner-tr"></div>
+<div class="corner corner-bl"></div>
+<div class="corner corner-br"></div>
+
+<!-- Floating Particles -->
+<div class="particles" id="particles"></div>
+
+<!-- Main Splash -->
+<div class="splash-screen splash-paused" id="splashScreen">
+    <!-- Animated Shield Logo -->
+    <div class="splash-logo">
+        <div class="shield-outer">
+            <i class="fas fa-shield-halved"></i>
+        </div>
+    </div>
+
+    <!-- College Name -->
+    <h1 class="college-name">KIET GROUP OF INSTITUTIONS</h1>
+
+    <!-- Subtitle -->
+    <p class="college-subtitle">DEPARTMENT OF COMPUTER SCIENCE & ENGINEERING</p>
+
+    <!-- Project Title -->
+    <div class="project-title">
+        <span>&#9670;</span> Multi-Level Secured Log Analysis &amp; Threat Hunting System <span>&#9670;</span>
+    </div>
+
+    <!-- Loading Bar -->
+    <div class="loading-section">
+        <div class="loading-bar-bg">
+            <div class="loading-bar-fill"></div>
+        </div>
+        <p class="loading-text">INITIALIZING SECURE SYSTEM<span>_</span></p>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Generate floating particles
+(function() {
+    const container = document.getElementById('particles');
+    for (let i = 0; i < 30; i++) {
+        const p = document.createElement('div');
+        p.classList.add('particle');
+        p.style.left = Math.random() * 100 + '%';
+        p.style.animationDelay = Math.random() * 4 + 's';
+        p.style.animationDuration = (3 + Math.random() * 3) + 's';
+        p.style.width = p.style.height = (2 + Math.random() * 3) + 'px';
+        container.appendChild(p);
+    }
+})();
+
+// ═══ Gate Ambient Sound — plays on first interaction with page ═══
+(function() {
+    let ambientStarted = false;
+    function startAmbient() {
+        if (ambientStarted) return;
+        ambientStarted = true;
+        if (typeof CyberSound !== 'undefined') CyberSound.gateAmbient();
+    }
+    // Any interaction on the page unlocks audio and starts ambient hum
+    document.addEventListener('mousemove', startAmbient, { once: true });
+    document.addEventListener('click', startAmbient, { once: true });
+    document.addEventListener('touchstart', startAmbient, { once: true });
+    document.addEventListener('keydown', startAmbient, { once: true });
+})();
+
+// ═══ Click Gate → Unlock Audio → Boot Sequence ═══
+(function() {
+    const gate = document.getElementById('clickGate');
+    const btn = document.getElementById('gateBtn');
+    const splash = document.getElementById('splashScreen');
+    let started = false;
+
+    function startBoot() {
+        if (started) return;
+        started = true;
+
+        // Stop ambient hum & play click
+        if (typeof CyberSound !== 'undefined') {
+            CyberSound.gateAmbientStop();
+            CyberSound.click();
+        }
+
+        // Hide gate popup
+        gate.classList.add('hidden');
+
+        // Un-pause splash animations
+        splash.classList.remove('splash-paused');
+
+        // Re-trigger CSS animations
+        splash.style.animation = 'none';
+        void splash.offsetHeight;
+        splash.style.animation = '';
+
+        // Play the full cyber boot scan loading sound
+        if (typeof CyberSound !== 'undefined') {
+            CyberSound.bootScan();
+        }
+
+        // Redirect after 5.5 seconds (5s loading + 0.5s buffer)
+        setTimeout(function() {
+            splash.classList.add('fade-out');
+            if (typeof CyberSound !== 'undefined') CyberSound.transition();
+            setTimeout(function() {
+                window.location.href = '{{ url_for("welcome") }}';
+            }, 800);
+        }, 5500);
+    }
+
+    btn.addEventListener('click', startBoot);
+    btn.addEventListener('touchstart', startBoot, { passive: true });
+})();
+</script>
+{% endblock %}

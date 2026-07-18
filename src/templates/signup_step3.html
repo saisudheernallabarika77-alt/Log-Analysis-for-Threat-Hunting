@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+{% block title %}Sign Up - Student Details{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="cyber-card auth-card">
+        <!-- Header -->
+        <div class="auth-header">
+            <div class="shield-icon pulse-green">
+                <i class="fas fa-user-graduate"></i>
+            </div>
+            <h1 class="cyber-title">COMPLETE PROFILE</h1>
+            <p class="cyber-subtitle">Fill in your student details</p>
+            <!-- Step Indicator -->
+            <div class="step-indicator">
+                <div class="step completed">
+                    <span class="step-num"><i class="fas fa-check"></i></span>
+                    <span class="step-label">Register</span>
+                </div>
+                <div class="step-line active"></div>
+                <div class="step completed">
+                    <span class="step-num"><i class="fas fa-check"></i></span>
+                    <span class="step-label">Verify OTP</span>
+                </div>
+                <div class="step-line active"></div>
+                <div class="step active">
+                    <span class="step-num">3</span>
+                    <span class="step-label">Details</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Errors -->
+        {% if errors %}
+        <div class="alert alert-danger">
+            {% for error in errors %}
+            <p><i class="fas fa-exclamation-circle"></i> {{ error }}</p>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Form -->
+        <form method="POST" action="{{ url_for('auth.signup_step3') }}" class="cyber-form">
+            <div class="form-row">
+                <div class="form-group half">
+                    <label class="cyber-label">
+                        <i class="fas fa-venus-mars"></i> Gender
+                    </label>
+                    <select name="sex" class="cyber-input cyber-select" required>
+                        <option value="">Select Gender</option>
+                        <option value="Male" {% if sex == 'Male' %}selected{% endif %}>Male</option>
+                        <option value="Female" {% if sex == 'Female' %}selected{% endif %}>Female</option>
+                        <option value="Other" {% if sex == 'Other' %}selected{% endif %}>Other</option>
+                    </select>
+                </div>
+
+                <div class="form-group half">
+                    <label class="cyber-label">
+                        <i class="fas fa-calendar"></i> Age
+                    </label>
+                    <input type="number" name="age" class="cyber-input" 
+                           value="{{ age or '' }}" min="15" max="60" placeholder="Age" required>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group half">
+                    <label class="cyber-label">
+                        <i class="fas fa-code-branch"></i> Branch
+                    </label>
+                    <select name="branch" class="cyber-input cyber-select" required>
+                        <option value="">Select Branch</option>
+                        <optgroup label="CSE Branches">
+                            <option value="CSC" {% if branch == 'CSC' %}selected{% endif %}>CSC</option>
+                            <option value="CSD" {% if branch == 'CSD' %}selected{% endif %}>CSD</option>
+                            <option value="CSM" {% if branch == 'CSM' %}selected{% endif %}>CSM</option>
+                            <option value="AID" {% if branch == 'AID' %}selected{% endif %}>AID</option>
+                        </optgroup>
+                        <optgroup label="Other Branches">
+                            <option value="ECE" {% if branch == 'ECE' %}selected{% endif %}>ECE</option>
+                            <option value="EEE" {% if branch == 'EEE' %}selected{% endif %}>EEE</option>
+                            <option value="MECH" {% if branch == 'MECH' %}selected{% endif %}>MECH</option>
+                            <option value="CIVIL" {% if branch == 'CIVIL' %}selected{% endif %}>CIVIL</option>
+                            <option value="IT" {% if branch == 'IT' %}selected{% endif %}>IT</option>
+                            <option value="Other" {% if branch == 'Other' %}selected{% endif %}>Other</option>
+                        </optgroup>
+                    </select>
+                </div>
+
+                <div class="form-group half">
+                    <label class="cyber-label">
+                        <i class="fas fa-graduation-cap"></i> Year
+                    </label>
+                    <select name="year" class="cyber-input cyber-select" required>
+                        <option value="">Select Year</option>
+                        <option value="1" {% if year == '1' %}selected{% endif %}>1st Year</option>
+                        <option value="2" {% if year == '2' %}selected{% endif %}>2nd Year</option>
+                        <option value="3" {% if year == '3' %}selected{% endif %}>3rd Year</option>
+                        <option value="4" {% if year == '4' %}selected{% endif %}>4th Year</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="cyber-label">
+                    <i class="fas fa-layer-group"></i> Section
+                </label>
+                <input type="text" name="section" class="cyber-input" 
+                       value="{{ section or '' }}" placeholder="e.g., A, B, C" required>
+            </div>
+
+            <div class="form-group">
+                <label class="cyber-label">
+                    <i class="fas fa-home"></i> Village / City
+                </label>
+                <input type="text" name="village" class="cyber-input" 
+                       value="{{ village or '' }}" placeholder="Enter your village or city" required>
+            </div>
+
+            <div class="form-group">
+                <label class="cyber-label">
+                    <i class="fas fa-map-marker-alt"></i> State
+                </label>
+                <input type="text" name="state" class="cyber-input" 
+                       value="{{ state or '' }}" placeholder="Enter your state" required>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group half">
+                    <label class="cyber-label">
+                        <i class="fas fa-indian-rupee-sign"></i> Fee (₹)
+                    </label>
+                    <input type="number" name="fee" class="cyber-input" 
+                           value="{{ fee or '0' }}" min="0" step="0.01" placeholder="Total fee amount">
+                </div>
+
+                <div class="form-group half">
+                    <label class="cyber-label">
+                        <i class="fas fa-file-invoice-dollar"></i> Dues (₹)
+                    </label>
+                    <input type="number" name="dues" class="cyber-input" 
+                           value="{{ dues or '0' }}" min="0" step="0.01" placeholder="Pending dues amount">
+                </div>
+            </div>
+
+            <button type="submit" class="cyber-btn cyber-btn-primary">
+                <i class="fas fa-save"></i> SAVE & COMPLETE REGISTRATION
+            </button>
+        </form>
+
+        <div class="auth-footer">
+            <p class="security-note">
+                <i class="fas fa-lock"></i> Your data is encrypted and stored securely.
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

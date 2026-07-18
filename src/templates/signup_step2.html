@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+{% block title %}Sign Up - OTP Verification{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="cyber-card auth-card">
+        <!-- Header -->
+        <div class="auth-header">
+            <div class="shield-icon pulse-green">
+                <i class="fas fa-envelope-circle-check"></i>
+            </div>
+            <h1 class="cyber-title">OTP VERIFICATION</h1>
+            <p class="cyber-subtitle">Enter the 6-digit code sent to</p>
+            <p class="email-display">{{ email }}</p>
+            <!-- Step Indicator -->
+            <div class="step-indicator">
+                <div class="step completed">
+                    <span class="step-num"><i class="fas fa-check"></i></span>
+                    <span class="step-label">Register</span>
+                </div>
+                <div class="step-line active"></div>
+                <div class="step active">
+                    <span class="step-num">2</span>
+                    <span class="step-label">Verify OTP</span>
+                </div>
+                <div class="step-line"></div>
+                <div class="step">
+                    <span class="step-num">3</span>
+                    <span class="step-label">Details</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Error -->
+        {% if error %}
+        <div class="alert alert-danger">
+            <i class="fas fa-exclamation-triangle"></i> {{ error }}
+        </div>
+        {% endif %}
+
+        <!-- OTP Form -->
+        {% if not blocked %}
+        <form method="POST" action="{{ url_for('auth.signup_step2') }}" class="cyber-form">
+            <div class="form-group otp-group">
+                <label class="cyber-label">
+                    <i class="fas fa-key"></i> Enter OTP Code
+                </label>
+                <div class="otp-inputs">
+                    <input type="text" maxlength="1" class="otp-digit" data-index="0" autofocus>
+                    <input type="text" maxlength="1" class="otp-digit" data-index="1">
+                    <input type="text" maxlength="1" class="otp-digit" data-index="2">
+                    <input type="text" maxlength="1" class="otp-digit" data-index="3">
+                    <input type="text" maxlength="1" class="otp-digit" data-index="4">
+                    <input type="text" maxlength="1" class="otp-digit" data-index="5">
+                </div>
+                <input type="hidden" name="otp" id="otpHidden">
+            </div>
+
+            <div class="otp-timer">
+                <i class="fas fa-clock"></i> OTP expires in: <span id="otpTimer">5:00</span>
+            </div>
+
+            <button type="submit" class="cyber-btn cyber-btn-primary" id="verifyBtn">
+                <i class="fas fa-check-circle"></i> VERIFY OTP
+            </button>
+        </form>
+        {% endif %}
+
+        <!-- Resend OTP -->
+        {% if show_resend or blocked %}
+        <div class="resend-section">
+            <p>Didn't receive the code?</p>
+            <button class="cyber-btn cyber-btn-secondary" id="resendBtn" onclick="resendOTP()">
+                <i class="fas fa-rotate-right"></i> RESEND OTP
+            </button>
+            <div id="resendMsg" class="resend-msg"></div>
+        </div>
+        {% endif %}
+
+        <div class="auth-footer">
+            <a href="{{ url_for('auth.signup_step1') }}" class="cyber-link">
+                <i class="fas fa-arrow-left"></i> Back to Registration
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// OTP Input handling
+const otpDigits = document.querySelectorAll('.otp-digit');
+const otpHidden = document.getElementById('otpHidden');
+
+otpDigits.forEach((input, index) => {
+    input.addEventListener('input', function() {
+        this.value = this.value.replace(/[^0-9]/g, '');
+        if (this.value && index < 5) {
+            otpDigits[index + 1].focus();
+        }
+        updateHiddenOTP();
+    });
+    
+    input.addEventListener('keydown', function(e) {
+        if (e.key === 'Backspace' && !this.value && index > 0) {
+            otpDigits[index - 1].focus();
+        }
+    });
+    
+    input.addEventListener('paste', function(e) {
+        e.preventDefault();
+        const pasted = e.clipboardData.getData('text').replace(/[^0-9]/g, '').slice(0, 6);
+        pasted.split('').forEach((char, i) => {
+            if (otpDigits[i]) otpDigits[i].value = char;
+        });
+        updateHiddenOTP();
+        if (pasted.length > 0) otpDigits[Math.min(pasted.length, 5)].focus();
+    });
+});
+
+function updateHiddenOTP() {
+    otpHidden.value = Array.from(otpDigits).map(d => d.value).join('');
+}
+
+// OTP Timer
+let timeLeft = 300; // 5 minutes
+const timerEl = document.getElementById('otpTimer');
+if (timerEl) {
+    const countdown = setInterval(() => {
+        timeLeft--;
+        const mins = Math.floor(timeLeft / 60);
+        const secs = timeLeft % 60;
+        timerEl.textContent = `${mins}:${secs.toString().padStart(2, '0')}`;
+        if (timeLeft <= 60) timerEl.style.color = '#FF4444';
+        if (timeLeft <= 0) {
+            clearInterval(countdown);
+            timerEl.textContent = 'EXPIRED';
+            timerEl.style.color = '#FF0000';
+        }
+    }, 1000);
+}
+
+// Resend OTP
+function resendOTP() {
+    const btn = document.getElementById('resendBtn');
+    const msg = document.getElementById('resendMsg');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> SENDING...';
+    
+    fetch('{{ url_for("auth.resend_otp") }}', { method: 'POST' })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            msg.textContent = '✅ New OTP sent! Check your email.';
+            msg.style.color = '#00FF00';
+            setTimeout(() => location.reload(), 2000);
+        } else {
+            msg.textContent = '❌ ' + (data.error || 'Failed to resend.');
+            msg.style.color = '#FF4444';
+        }
+    })
+    .catch(() => {
+        msg.textContent = '❌ Network error. Try again.';
+        msg.style.color = '#FF4444';
+    })
+    .finally(() => {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-rotate-right"></i> RESEND OTP';
+    });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,1209 @@
+
+{% extends "base.html" %}
+{% block title %}Security Center{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+    /* ── Reset Button in Banner ── */
+    .btn-reset-alerts {
+        background: linear-gradient(135deg, #330000, #660000);
+        border: 1px solid #FF0000;
+        color: #FF4444;
+        padding: 8px 18px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-family: 'Orbitron', sans-serif;
+        font-size: 10px;
+        letter-spacing: 1.5px;
+        transition: all 0.3s;
+        white-space: nowrap;
+    }
+    .btn-reset-alerts:hover {
+        background: linear-gradient(135deg, #440000, #880000);
+        box-shadow: 0 0 20px rgba(255,0,0,0.4);
+        color: #FF6666;
+        transform: scale(1.03);
+    }
+    .btn-reset-alerts i { margin-right: 6px; }
+
+    /* ── Reset Confirmation Modal ── */
+    .reset-modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        background: rgba(10, 0, 0, 0.9);
+        z-index: 9999;
+        align-items: center;
+        justify-content: center;
+    }
+    .reset-modal-overlay.active { display: flex; }
+    .reset-modal-box {
+        background: #0a0a14;
+        border: 2px solid #FF0000;
+        border-radius: 14px;
+        width: 460px;
+        max-width: 95vw;
+        box-shadow: 0 0 60px rgba(255,0,0,0.2), inset 0 0 30px rgba(255,0,0,0.03);
+        overflow: hidden;
+        animation: resetModalIn 0.3s ease;
+    }
+    @keyframes resetModalIn {
+        from { transform: scale(0.9); opacity: 0; }
+        to   { transform: scale(1); opacity: 1; }
+    }
+    .reset-modal-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 22px;
+        border-bottom: 1px solid #330000;
+        background: rgba(255,0,0,0.04);
+    }
+    .reset-modal-header h2 {
+        font-family: 'Orbitron', sans-serif;
+        font-size: 14px;
+        color: #FF4444;
+        letter-spacing: 2px;
+        margin: 0;
+    }
+    .reset-modal-header h2 i { margin-right: 8px; color: #FFA500; }
+    .reset-modal-close {
+        background: none;
+        border: none;
+        color: #666;
+        font-size: 24px;
+        cursor: pointer;
+    }
+    .reset-modal-close:hover { color: #FF5555; }
+    .reset-modal-body {
+        padding: 28px 24px;
+        text-align: center;
+    }
+    .reset-warning-icon {
+        font-size: 52px;
+        color: #FF0000;
+        margin-bottom: 16px;
+        animation: resetPulse 1.5s ease-in-out infinite;
+    }
+    @keyframes resetPulse {
+        0%, 100% { opacity: 0.7; transform: scale(1); }
+        50%      { opacity: 1; transform: scale(1.1); }
+    }
+    .reset-modal-body h3 {
+        font-family: 'Orbitron', sans-serif;
+        font-size: 16px;
+        color: #FF4444;
+        letter-spacing: 2px;
+        margin: 0 0 12px;
+    }
+    .reset-modal-body p {
+        font-family: 'Share Tech Mono', monospace;
+        color: #888;
+        font-size: 13px;
+        margin-bottom: 12px;
+    }
+    .reset-list {
+        list-style: none;
+        padding: 0;
+        margin: 0 0 16px;
+        text-align: left;
+        display: inline-block;
+    }
+    .reset-list li {
+        font-family: 'Share Tech Mono', monospace;
+        font-size: 13px;
+        color: #cc6666;
+        padding: 5px 0;
+        letter-spacing: 0.5px;
+    }
+    .reset-list li i {
+        color: #FF4444;
+        width: 20px;
+        text-align: center;
+        margin-right: 8px;
+        font-size: 12px;
+    }
+    .reset-note {
+        font-size: 11px !important;
+        color: #FFA500 !important;
+        background: rgba(255,165,0,0.06);
+        padding: 8px 14px;
+        border-radius: 5px;
+        border: 1px solid rgba(255,165,0,0.15);
+        display: inline-block;
+        margin-bottom: 20px !important;
+    }
+    .reset-note i { margin-right: 5px; }
+    .reset-actions {
+        display: flex;
+        gap: 12px;
+        justify-content: center;
+    }
+    .btn-reset-cancel {
+        background: transparent;
+        border: 1px solid #444;
+        color: #888;
+        padding: 10px 22px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-family: 'Orbitron', sans-serif;
+        font-size: 10px;
+        letter-spacing: 1px;
+        transition: all 0.3s;
+    }
+    .btn-reset-cancel:hover {
+        border-color: #00FF00;
+        color: #00FF00;
+    }
+    .btn-reset-confirm {
+        background: linear-gradient(135deg, #440000, #880000);
+        border: 1px solid #FF0000;
+        color: #FF4444;
+        padding: 10px 22px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-family: 'Orbitron', sans-serif;
+        font-size: 10px;
+        letter-spacing: 1px;
+        transition: all 0.3s;
+    }
+    .btn-reset-confirm:hover {
+        background: linear-gradient(135deg, #660000, #aa0000);
+        box-shadow: 0 0 20px rgba(255,0,0,0.4);
+        color: #FF6666;
+    }
+    .btn-reset-confirm:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    /* ── Reset Password Input ── */
+    .reset-pw-section {
+        margin-bottom: 20px;
+    }
+    .reset-pw-label {
+        display: block;
+        font-family: 'Orbitron', sans-serif;
+        font-size: 10px;
+        color: #FFA500;
+        letter-spacing: 1.5px;
+        margin-bottom: 8px;
+    }
+    .reset-pw-label i { margin-right: 6px; }
+    .reset-pw-input {
+        width: 100%;
+        padding: 11px 16px;
+        background: #0d0d1a;
+        border: 1px solid #332222;
+        border-radius: 6px;
+        color: #fff;
+        font-family: 'Share Tech Mono', monospace;
+        font-size: 14px;
+        outline: none;
+        text-align: center;
+        letter-spacing: 2px;
+        box-sizing: border-box;
+    }
+    .reset-pw-input:focus {
+        border-color: #FF4444;
+        box-shadow: 0 0 12px rgba(255,0,0,0.15);
+    }
+    .reset-pw-error {
+        color: #FF5555;
+        font-family: 'Share Tech Mono', monospace;
+        font-size: 12px;
+        margin-top: 6px;
+        min-height: 18px;
+    }
+
+    /* ═══════════════════════════════════════════
+       FULL-SCREEN RADAR OVERLAY
+       ═══════════════════════════════════════════ */
+    .radar-overlay {
+        display: none;
+        position: fixed;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        background: radial-gradient(ellipse at center, #0a0f0a 0%, #000000 100%);
+        z-index: 10000;
+        align-items: center;
+        justify-content: center;
+    }
+    .radar-overlay.active { display: flex; }
+    .radar-scan-container {
+        width: 100%; height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+    }
+    .radar-close-btn {
+        position: absolute;
+        top: 20px; right: 25px;
+        background: none;
+        border: 1px solid #333;
+        color: #555;
+        font-size: 20px;
+        width: 40px; height: 40px;
+        border-radius: 50%;
+        cursor: pointer;
+        z-index: 10;
+        transition: all 0.3s;
+    }
+    .radar-close-btn:hover { border-color: #FF4444; color: #FF4444; }
+    .radar-phase { text-align: center; }
+
+    /* Full-screen Radar Animation */
+    .radar-fullscreen {
+        width: 320px; height: 320px;
+        border-radius: 50%;
+        position: relative;
+        margin: 0 auto 30px;
+        background: radial-gradient(circle, rgba(0,255,0,0.03) 0%, transparent 70%);
+    }
+    .radar-fs-ring {
+        position: absolute;
+        border-radius: 50%;
+        border: 1px solid rgba(0,255,0,0.12);
+    }
+    .fs-ring-1 { width: 25%; height: 25%; top: 37.5%; left: 37.5%; }
+    .fs-ring-2 { width: 50%; height: 50%; top: 25%; left: 25%; }
+    .fs-ring-3 { width: 75%; height: 75%; top: 12.5%; left: 12.5%; }
+    .fs-ring-4 { width: 100%; height: 100%; top: 0; left: 0; border-color: rgba(0,255,0,0.2); }
+    .radar-fs-sweep {
+        position: absolute;
+        top: 50%; left: 50%;
+        width: 50%; height: 2px;
+        background: linear-gradient(90deg, #00FF00, transparent);
+        transform-origin: left center;
+        animation: radarFsSweep 2s linear infinite;
+        box-shadow: 0 0 15px rgba(0,255,0,0.4);
+    }
+    @keyframes radarFsSweep {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+    .radar-fs-center {
+        position: absolute;
+        width: 10px; height: 10px;
+        background: #00FF00;
+        border-radius: 50%;
+        top: 50%; left: 50%;
+        transform: translate(-50%,-50%);
+        box-shadow: 0 0 15px #00FF00, 0 0 30px rgba(0,255,0,0.3);
+    }
+
+    /* Scanning blips */
+    .radar-fs-blip {
+        position: absolute;
+        width: 10px; height: 10px;
+        border-radius: 50%;
+        animation: fsBlipAppear 0.5s ease forwards;
+        opacity: 0;
+    }
+    @keyframes fsBlipAppear {
+        0% { opacity: 0; transform: scale(0); }
+        50% { opacity: 1; transform: scale(1.5); }
+        100% { opacity: 1; transform: scale(1); }
+    }
+    .fs-blip-warn {
+        background: #FFA500;
+        box-shadow: 0 0 12px rgba(255,165,0,0.6);
+    }
+    .fs-blip-crit {
+        background: #FF0000;
+        box-shadow: 0 0 15px rgba(255,0,0,0.7);
+        animation: fsBlipAppear 0.5s ease forwards, blipPulse 0.6s ease-in-out infinite 0.5s;
+    }
+    .fs-blip-safe {
+        background: #00FF00;
+        box-shadow: 0 0 10px rgba(0,255,0,0.5);
+    }
+
+    /* Status Text */
+    .radar-status-text { text-align: center; }
+    .radar-title {
+        font-family: 'Orbitron', sans-serif;
+        font-size: 16px;
+        color: #00FF00;
+        letter-spacing: 4px;
+        margin-bottom: 20px;
+        text-shadow: 0 0 15px rgba(0,255,0,0.3);
+    }
+    .radar-title i { margin-right: 10px; }
+    .radar-progress-bar {
+        width: 300px;
+        height: 4px;
+        background: #111;
+        border-radius: 2px;
+        margin: 0 auto 15px;
+        overflow: hidden;
+        border: 1px solid #1a1a2e;
+    }
+    .radar-progress-fill {
+        width: 0%;
+        height: 100%;
+        background: linear-gradient(90deg, #003300, #00FF00);
+        border-radius: 2px;
+        transition: width 0.3s linear;
+        box-shadow: 0 0 8px rgba(0,255,0,0.4);
+    }
+    .radar-status-line {
+        font-family: 'Share Tech Mono', monospace;
+        font-size: 12px;
+        color: #00FF00;
+        letter-spacing: 2px;
+        min-height: 20px;
+        animation: statusBlink 1s step-end infinite;
+    }
+    @keyframes statusBlink {
+        50% { opacity: 0.5; }
+    }
+
+    /* Results Phase */
+    .radar-results-shield {
+        font-size: 72px;
+        margin-bottom: 20px;
+        transition: all 0.5s;
+    }
+    .radar-results-shield.shield-safe {
+        color: #00FF00;
+        text-shadow: 0 0 30px rgba(0,255,0,0.4);
+        animation: shieldGlow 2s ease-in-out infinite;
+    }
+    .radar-results-shield.shield-warn {
+        color: #FFA500;
+        text-shadow: 0 0 30px rgba(255,165,0,0.4);
+        animation: shieldGlow 1.5s ease-in-out infinite;
+    }
+    .radar-results-shield.shield-critical {
+        color: #FF0000;
+        text-shadow: 0 0 40px rgba(255,0,0,0.6);
+        animation: shieldShake 0.3s ease-in-out infinite, shieldGlow 0.8s ease-in-out infinite;
+    }
+    @keyframes shieldGlow {
+        0%, 100% { filter: brightness(1); }
+        50% { filter: brightness(1.5); }
+    }
+    .radar-results-title {
+        font-family: 'Orbitron', sans-serif;
+        font-size: 20px;
+        letter-spacing: 3px;
+        margin-bottom: 15px;
+        line-height: 1.5;
+    }
+    .radar-results-title.title-safe { color: #00FF00; text-shadow: 0 0 10px rgba(0,255,0,0.3); }
+    .radar-results-title.title-warn { color: #FFA500; text-shadow: 0 0 10px rgba(255,165,0,0.3); }
+    .radar-results-title.title-critical { color: #FF0000; text-shadow: 0 0 15px rgba(255,0,0,0.4); animation: critPulse 1s ease-in-out infinite; }
+    @keyframes critPulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.6; }
+    }
+    .radar-results-details {
+        font-family: 'Share Tech Mono', monospace;
+        font-size: 13px;
+        color: #888;
+        line-height: 1.8;
+        margin-bottom: 20px;
+        max-width: 500px;
+    }
+    .radar-results-items {
+        display: flex;
+        gap: 20px;
+        justify-content: center;
+        flex-wrap: wrap;
+        margin-bottom: 30px;
+    }
+    .radar-result-item {
+        background: rgba(255,255,255,0.03);
+        border: 1px solid #1a1a2e;
+        border-radius: 8px;
+        padding: 14px 22px;
+        text-align: center;
+        min-width: 120px;
+    }
+    .radar-result-item .ri-val {
+        font-family: 'Orbitron', sans-serif;
+        font-size: 28px;
+        font-weight: bold;
+        display: block;
+        margin-bottom: 4px;
+    }
+    .radar-result-item .ri-label {
+        font-family: 'Share Tech Mono', monospace;
+        font-size: 10px;
+        color: #666;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+    }
+    .ri-warn { color: #FFA500; border-color: rgba(255,165,0,0.2); }
+    .ri-crit { color: #FF0000; border-color: rgba(255,0,0,0.2); }
+    .ri-safe { color: #00FF00; border-color: rgba(0,255,0,0.2); }
+
+    .radar-dismiss-btn {
+        background: linear-gradient(135deg, #003300, #006600);
+        border: 1px solid #00FF00;
+        color: #00FF00;
+        padding: 12px 30px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-family: 'Orbitron', sans-serif;
+        font-size: 12px;
+        letter-spacing: 2px;
+        transition: all 0.3s;
+    }
+    .radar-dismiss-btn:hover {
+        background: linear-gradient(135deg, #004400, #008800);
+        box-shadow: 0 0 20px rgba(0,255,0,0.3);
+    }
+
+    /* Critical overlay red flash */
+    .radar-overlay.critical-bg {
+        background: radial-gradient(ellipse at center, #1a0000 0%, #000000 100%);
+    }
+    .radar-overlay.critical-bg .radar-fs-ring { border-color: rgba(255,0,0,0.15); }
+    .radar-overlay.critical-bg .radar-fs-sweep {
+        background: linear-gradient(90deg, #FF0000, transparent);
+        box-shadow: 0 0 15px rgba(255,0,0,0.4);
+    }
+    .radar-overlay.critical-bg .radar-fs-center {
+        background: #FF0000;
+        box-shadow: 0 0 15px #FF0000, 0 0 30px rgba(255,0,0,0.3);
+    }
+    .radar-overlay.critical-bg .radar-title { color: #FF0000; text-shadow: 0 0 15px rgba(255,0,0,0.3); }
+    .radar-overlay.critical-bg .radar-progress-fill { background: linear-gradient(90deg, #330000, #FF0000); box-shadow: 0 0 8px rgba(255,0,0,0.4); }
+    .radar-overlay.critical-bg .radar-status-line { color: #FF4444; }
+    .radar-overlay.critical-bg .radar-dismiss-btn {
+        background: linear-gradient(135deg, #330000, #660000);
+        border-color: #FF0000;
+        color: #FF4444;
+    }
+
+    /* Warning overlay orange tint */
+    .radar-overlay.warn-bg {
+        background: radial-gradient(ellipse at center, #0f0a00 0%, #000000 100%);
+    }
+    .radar-overlay.warn-bg .radar-fs-ring { border-color: rgba(255,165,0,0.12); }
+    .radar-overlay.warn-bg .radar-fs-sweep {
+        background: linear-gradient(90deg, #FFA500, transparent);
+        box-shadow: 0 0 15px rgba(255,165,0,0.4);
+    }
+    .radar-overlay.warn-bg .radar-fs-center {
+        background: #FFA500;
+        box-shadow: 0 0 15px #FFA500;
+    }
+    .radar-overlay.warn-bg .radar-title { color: #FFA500; }
+    .radar-overlay.warn-bg .radar-progress-fill { background: linear-gradient(90deg, #332200, #FFA500); }
+    .radar-overlay.warn-bg .radar-status-line { color: #FFA500; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-wrapper">
+    <!-- Top Navigation Bar -->
+    <nav class="cyber-nav">
+        <div class="nav-brand">
+            <i class="fas fa-shield-halved nav-shield"></i>
+            <span class="nav-title">CYBERSECURE</span>
+            <span class="nav-badge">THREAT HUNTER</span>
+        </div>
+        <div class="nav-user">
+            <a href="{{ url_for('dashboard.home') }}" class="cyber-btn cyber-btn-small" style="margin-right:8px;">
+                <i class="fas fa-home"></i> Dashboard
+            </a>
+            <span class="nav-greeting">Welcome, <strong>{{ student_name }}</strong></span>
+            <span class="nav-id">{{ student_id }}</span>
+            <a href="{{ url_for('auth.logout') }}" class="cyber-btn cyber-btn-small cyber-btn-danger">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </a>
+        </div>
+    </nav>
+
+    <!-- Dashboard Content -->
+    <div class="dashboard-content">
+        
+        <!-- Security Status Banner -->
+        <div class="security-banner {% if risk_score >= 70 %}banner-critical{% elif risk_score >= 40 %}banner-warning{% else %}banner-safe{% endif %}">
+            <div class="banner-icon">
+                {% if risk_score >= 70 %}
+                <i class="fas fa-radiation blink-red"></i>
+                {% elif risk_score >= 40 %}
+                <i class="fas fa-exclamation-triangle"></i>
+                {% else %}
+                <i class="fas fa-shield-halved"></i>
+                {% endif %}
+            </div>
+            <div class="banner-text">
+                {% if risk_score >= 70 %}
+                    🚨 CRITICAL SECURITY STATUS — Immediate attention required!
+                {% elif risk_score >= 40 %}
+                    ⚠️ ELEVATED THREAT LEVEL — Review security alerts below.
+                {% else %}
+                    ✅ SYSTEM SECURE — No immediate threats detected.
+                {% endif %}
+            </div>
+            <div class="banner-score">
+                Risk Score: <strong>{{ risk_score }}/100</strong>
+            </div>
+            <button class="btn-reset-alerts" onclick="openResetModal()" title="Clear all alerts and reset readings to 0">
+                <i class="fas fa-trash-alt"></i> RESET ALL ALERTS
+            </button>
+        </div>
+
+        <!-- Stats Cards Row -->
+        <div class="stats-grid">
+            <!-- Risk Meter -->
+            <div class="cyber-card stat-card">
+                <div class="stat-header">
+                    <i class="fas fa-gauge-high"></i>
+                    <span>RISK METER</span>
+                </div>
+                <div class="risk-meter-container">
+                    <canvas id="riskMeter" width="200" height="120"></canvas>
+                    <div class="risk-label" id="riskLabel" style="color: {% if risk_score >= 70 %}#FF0000{% elif risk_score >= 40 %}#FFA500{% else %}#00FF00{% endif %}">
+                        {{ risk_score }}%
+                    </div>
+                </div>
+            </div>
+
+            <!-- Failed Logins -->
+            <div class="cyber-card stat-card">
+                <div class="stat-header">
+                    <i class="fas fa-user-xmark"></i>
+                    <span>FAILED LOGINS (24H)</span>
+                </div>
+                <div class="stat-value {% if failed_logins > 0 %}text-danger{% else %}text-safe{% endif %}">
+                    {{ failed_logins }}
+                </div>
+                <div class="stat-sub">Total: {{ total_logins }} attempts</div>
+            </div>
+
+            <!-- Security Alerts -->
+            <div class="cyber-card stat-card">
+                <div class="stat-header">
+                    <i class="fas fa-bell"></i>
+                    <span>SECURITY ALERTS</span>
+                </div>
+                <div class="stat-value text-warning">
+                    {{ (alerts.get('CRITICAL', 0) + alerts.get('HIGH', 0) + alerts.get('MEDIUM', 0) + alerts.get('LOW', 0)) }}
+                </div>
+                <div class="stat-breakdown">
+                    {% if alerts.get('CRITICAL', 0) > 0 %}
+                    <span class="breakdown-critical">CRIT: {{ alerts.get('CRITICAL', 0) }}</span>
+                    {% endif %}
+                    {% if alerts.get('MEDIUM', 0) > 0 %}
+                    <span class="breakdown-medium">MED: {{ alerts.get('MEDIUM', 0) }}</span>
+                    {% endif %}
+                    {% if alerts.get('LOW', 0) > 0 %}
+                    <span class="breakdown-low">LOW: {{ alerts.get('LOW', 0) }}</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- SQL Injection Attempts -->
+            <div class="cyber-card stat-card">
+                <div class="stat-header">
+                    <i class="fas fa-database"></i>
+                    <span>SQL INJECTION</span>
+                </div>
+                <div class="stat-value {% if sqli_count > 0 %}text-critical blink-red{% else %}text-safe{% endif %}">
+                    {{ sqli_count }}
+                </div>
+                <div class="stat-sub">Attacks Blocked</div>
+            </div>
+
+            <!-- Last Login -->
+            <div class="cyber-card stat-card">
+                <div class="stat-header">
+                    <i class="fas fa-clock"></i>
+                    <span>LAST LOGIN</span>
+                </div>
+                <div class="stat-value-small">
+                    {% if last_login %}
+                    {{ last_login['timestamp'] }}
+                    {% else %}
+                    First Session
+                    {% endif %}
+                </div>
+                <div class="stat-sub">
+                    IP: {{ last_login['ip_address'] if last_login else 'N/A' }}
+                </div>
+            </div>
+
+            <!-- Unique IPs -->
+            <div class="cyber-card stat-card">
+                <div class="stat-header">
+                    <i class="fas fa-network-wired"></i>
+                    <span>UNIQUE IPs</span>
+                </div>
+                <div class="stat-value {% if unique_ips > 3 %}text-warning{% else %}text-safe{% endif %}">
+                    {{ unique_ips }}
+                </div>
+                <div class="stat-sub">Locations Detected</div>
+            </div>
+        </div>
+
+        <!-- Charts Row -->
+        <div class="charts-grid">
+            <!-- Login Activity Chart -->
+            <div class="cyber-card chart-card">
+                <div class="card-header">
+                    <i class="fas fa-chart-line"></i>
+                    <span>LOGIN ACTIVITY (14 Days)</span>
+                    <div class="radar-dot"></div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="loginChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Threat Radar (CLICKABLE) -->
+            <div class="cyber-card chart-card" style="cursor:pointer;" onclick="launchRadarScan()" title="Click to launch full threat analysis">
+                <div class="card-header">
+                    <i class="fas fa-satellite-dish"></i>
+                    <span>THREAT RADAR</span>
+                    <span style="margin-left:8px;font-size:9px;color:#888;letter-spacing:1px;">[ CLICK TO SCAN ]</span>
+                    <div class="radar-dot active"></div>
+                </div>
+                <div class="radar-container">
+                    <div class="radar-scanner" id="radarScanner">
+                        <div class="radar-ring ring-1"></div>
+                        <div class="radar-ring ring-2"></div>
+                        <div class="radar-ring ring-3"></div>
+                        <div class="radar-sweep"></div>
+                        <div class="radar-center"></div>
+                        {% if sqli_count > 0 %}
+                        <div class="radar-blip blip-critical" style="top:20%;left:60%"></div>
+                        {% endif %}
+                        {% if failed_logins > 0 %}
+                        <div class="radar-blip blip-warning" style="top:40%;left:30%"></div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Security Alerts Table -->
+        <div class="cyber-card table-card">
+            <div class="card-header">
+                <i class="fas fa-exclamation-triangle"></i>
+                <span>RECENT SECURITY ALERTS</span>
+                <div class="alert-live-indicator">
+                    <span class="live-dot"></span> LIVE
+                </div>
+            </div>
+            <div class="cyber-table-container">
+                <table class="cyber-table">
+                    <thead>
+                        <tr>
+                            <th>SEVERITY</th>
+                            <th>TYPE</th>
+                            <th>MESSAGE</th>
+                            <th>IP ADDRESS</th>
+                            <th>TIMESTAMP</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for alert in recent_alerts %}
+                        <tr class="alert-row severity-{{ alert['severity']|lower }}">
+                            <td>
+                                <span class="severity-badge severity-{{ alert['severity']|lower }}">
+                                    {% if alert['severity'] == 'CRITICAL' %}🔴
+                                    {% elif alert['severity'] == 'HIGH' %}🟠
+                                    {% elif alert['severity'] == 'MEDIUM' %}🟡
+                                    {% else %}🟢{% endif %}
+                                    {{ alert['severity'] }}
+                                </span>
+                            </td>
+                            <td>{{ alert['alert_type'] }}</td>
+                            <td>{{ alert['message'] }}</td>
+                            <td><code>{{ alert['ip_address'] or 'N/A' }}</code></td>
+                            <td>{{ alert['timestamp'] }}</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="5" class="no-data">
+                                <i class="fas fa-check-circle"></i> No security alerts. System is clean.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Recent Login Attempts Table -->
+        <div class="cyber-card table-card">
+            <div class="card-header">
+                <i class="fas fa-right-to-bracket"></i>
+                <span>LOGIN ATTEMPT LOG</span>
+            </div>
+            <div class="cyber-table-container">
+                <table class="cyber-table">
+                    <thead>
+                        <tr>
+                            <th>STATUS</th>
+                            <th>IP ADDRESS</th>
+                            <th>TIMESTAMP</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for login in recent_logins %}
+                        <tr class="{% if login['attempt_status'] == 'FAILED' %}row-failed{% else %}row-success{% endif %}">
+                            <td>
+                                <span class="status-badge status-{{ login['attempt_status']|lower }}">
+                                    {% if login['attempt_status'] == 'SUCCESS' %}✅{% else %}❌{% endif %}
+                                    {{ login['attempt_status'] }}
+                                </span>
+                            </td>
+                            <td><code>{{ login['ip_address'] }}</code></td>
+                            <td>{{ login['timestamp'] }}</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="3" class="no-data">No login attempts recorded.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Threat Hunting Panel -->
+        <div class="cyber-card threat-panel">
+            <div class="card-header">
+                <i class="fas fa-crosshairs"></i>
+                <span>THREAT HUNTING MODULE</span>
+                <button class="cyber-btn cyber-btn-small" onclick="refreshThreatData()">
+                    <i class="fas fa-sync-alt"></i> Refresh
+                </button>
+            </div>
+            <div class="threat-grid">
+                <div class="threat-item" id="threatPatterns">
+                    <h4><i class="fas fa-fingerprint"></i> Suspicious Patterns</h4>
+                    <div class="threat-content" id="patternsList">
+                        <p class="loading">Scanning...</p>
+                    </div>
+                </div>
+                <div class="threat-item" id="threatIPs">
+                    <h4><i class="fas fa-globe"></i> IP Intelligence</h4>
+                    <div class="threat-content" id="ipList">
+                        <p class="loading">Scanning...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- ═══ FULL-SCREEN RADAR ANALYSIS OVERLAY ═══ -->
+<div class="radar-overlay" id="radarOverlay">
+    <div class="radar-scan-container">
+        <!-- Close Button -->
+        <button class="radar-close-btn" id="radarCloseBtn" onclick="closeRadarOverlay()">
+            <i class="fas fa-times"></i>
+        </button>
+
+        <!-- Phase 1: Scanning -->
+        <div class="radar-phase" id="radarPhaseScanning">
+            <div class="radar-fullscreen">
+                <div class="radar-fs-ring fs-ring-1"></div>
+                <div class="radar-fs-ring fs-ring-2"></div>
+                <div class="radar-fs-ring fs-ring-3"></div>
+                <div class="radar-fs-ring fs-ring-4"></div>
+                <div class="radar-fs-sweep"></div>
+                <div class="radar-fs-center"></div>
+                <!-- Dynamic blips added by JS -->
+            </div>
+            <div class="radar-status-text">
+                <div class="radar-title"><i class="fas fa-satellite-dish"></i> THREAT RADAR ACTIVE</div>
+                <div class="radar-progress-bar">
+                    <div class="radar-progress-fill" id="radarProgressFill"></div>
+                </div>
+                <div class="radar-status-line" id="radarStatusLine">INITIALIZING SCAN...</div>
+            </div>
+        </div>
+
+        <!-- Phase 2: Results -->
+        <div class="radar-phase" id="radarPhaseResults" style="display:none;">
+            <div class="radar-results-shield" id="radarResultsShield">
+                <i class="fas fa-shield-halved"></i>
+            </div>
+            <div class="radar-results-title" id="radarResultsTitle"></div>
+            <div class="radar-results-details" id="radarResultsDetails"></div>
+            <div class="radar-results-items" id="radarResultsItems"></div>
+            <button class="radar-dismiss-btn" onclick="closeRadarOverlay()">
+                <i class="fas fa-check"></i> ACKNOWLEDGED
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ Reset Alerts Confirmation Modal ═══ -->
+<div class="reset-modal-overlay" id="resetModal">
+    <div class="reset-modal-box">
+        <div class="reset-modal-header">
+            <h2><i class="fas fa-exclamation-triangle"></i> CONFIRM RESET</h2>
+            <button class="reset-modal-close" onclick="closeResetModal()">&times;</button>
+        </div>
+        <div class="reset-modal-body">
+            <div class="reset-warning-icon">
+                <i class="fas fa-radiation"></i>
+            </div>
+            <h3>ERASE ALL SECURITY DATA?</h3>
+            <p>This will permanently delete:</p>
+            <ul class="reset-list">
+                <li><i class="fas fa-bell"></i> All Security Alerts</li>
+                <li><i class="fas fa-user-xmark"></i> All Login Attempt Logs</li>
+                <li><i class="fas fa-crosshairs"></i> All Threat Hunting Logs</li>
+                <li><i class="fas fa-gauge-high"></i> Risk Score → Reset to 0</li>
+            </ul>
+            <p class="reset-note"><i class="fas fa-info-circle"></i> All readings will start fresh from 0.</p>
+
+            <!-- Password Verification -->
+            <div class="reset-pw-section">
+                <label class="reset-pw-label"><i class="fas fa-lock"></i> ENTER YOUR LOGIN PASSWORD TO CONFIRM</label>
+                <input type="password" id="resetPassword" class="reset-pw-input" 
+                       placeholder="Enter your password" 
+                       onkeydown="if(event.key==='Enter')confirmResetAlerts()">
+                <p class="reset-pw-error" id="resetPwError"></p>
+            </div>
+
+            <div class="reset-actions">
+                <button class="btn-reset-cancel" onclick="closeResetModal()">
+                    <i class="fas fa-times"></i> CANCEL
+                </button>
+                <button class="btn-reset-confirm" id="btnResetConfirm" onclick="confirmResetAlerts()">
+                    <i class="fas fa-trash-alt"></i> VERIFY & ERASE
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+<script>
+// Initialize login chart
+fetchLoginChart();
+
+// Initialize threat data
+refreshThreatData();
+
+// Auto refresh every 30 seconds
+setInterval(refreshDashboard, 30000);
+
+// Draw risk meter
+drawRiskMeter({{ risk_score }});
+
+// ── Reset Alerts Modal ──
+function openResetModal() {
+    if (typeof CyberSound !== 'undefined') CyberSound.click();
+    document.getElementById('resetPassword').value = '';
+    document.getElementById('resetPwError').textContent = '';
+    document.getElementById('resetModal').classList.add('active');
+    setTimeout(() => document.getElementById('resetPassword').focus(), 200);
+}
+function closeResetModal() {
+    if (typeof CyberSound !== 'undefined') CyberSound.click();
+    document.getElementById('resetModal').classList.remove('active');
+}
+document.getElementById('resetModal').addEventListener('click', function(e) {
+    if (e.target === this) closeResetModal();
+});
+
+function confirmResetAlerts() {
+    if (typeof CyberSound !== 'undefined') CyberSound.click();
+    const pw = document.getElementById('resetPassword').value;
+    const errEl = document.getElementById('resetPwError');
+    const btn = document.getElementById('btnResetConfirm');
+
+    // Validate password is entered
+    if (!pw.trim()) {
+        errEl.textContent = '⚠ Please enter your login password.';
+        if (typeof CyberSound !== 'undefined') CyberSound.loginFailed();
+        document.getElementById('resetPassword').focus();
+        return;
+    }
+
+    errEl.textContent = '';
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> VERIFYING...';
+
+    fetch('/api/security/reset-alerts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: pw })
+    })
+    .then(r => r.json().then(data => ({ status: r.status, body: data })))
+    .then(({ status, body }) => {
+        if (body.success) {
+            if (typeof CyberSound !== 'undefined') CyberSound.loginSuccess();
+            btn.innerHTML = '<i class="fas fa-check"></i> CLEARED!';
+            btn.style.borderColor = '#00FF00';
+            btn.style.color = '#00FF00';
+            errEl.style.color = '#00FF00';
+            errEl.textContent = '✅ All alerts erased. Reloading...';
+            setTimeout(() => { location.reload(); }, 1200);
+        } else if (status === 403) {
+            // Wrong password
+            if (typeof CyberSound !== 'undefined') CyberSound.loginFailed();
+            errEl.textContent = '❌ Incorrect password. Access denied.';
+            document.getElementById('resetPassword').value = '';
+            document.getElementById('resetPassword').focus();
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-trash-alt"></i> VERIFY & ERASE';
+        } else {
+            if (typeof CyberSound !== 'undefined') CyberSound.loginFailed();
+            errEl.textContent = '⚠ ' + (body.error || 'Failed to reset alerts.');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-trash-alt"></i> VERIFY & ERASE';
+        }
+    })
+    .catch(() => {
+        if (typeof CyberSound !== 'undefined') CyberSound.loginFailed();
+        errEl.textContent = '⚠ Network error. Please try again.';
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-trash-alt"></i> VERIFY & ERASE';
+    });
+}
+
+// Add typing sound to reset password input
+document.getElementById('resetPassword').addEventListener('input', function() {
+    if (typeof CyberSound !== 'undefined') CyberSound.type();
+});
+
+// ═══════════════════════════════════════════
+// FULL-SCREEN RADAR THREAT ANALYSIS SYSTEM
+// ═══════════════════════════════════════════
+
+// -- AI Voice Engine (Web Speech API) --
+function cyberVoice(text, rate, pitch) {
+    if (!('speechSynthesis' in window)) return;
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.rate = rate || 0.85;
+    u.pitch = pitch || 0.6;
+    u.volume = 1;
+    // Prefer a deep/robotic voice if available
+    const voices = window.speechSynthesis.getVoices();
+    const preferred = voices.find(v => /google.*us|microsoft.*david|daniel|male/i.test(v.name))
+                   || voices.find(v => /english/i.test(v.lang))
+                   || voices[0];
+    if (preferred) u.voice = preferred;
+    window.speechSynthesis.speak(u);
+}
+// Preload voices
+if ('speechSynthesis' in window) {
+    window.speechSynthesis.getVoices();
+    window.speechSynthesis.onvoiceschanged = function() { window.speechSynthesis.getVoices(); };
+}
+
+let radarActive = false;
+
+function launchRadarScan() {
+    if (radarActive) return;
+    radarActive = true;
+    if (typeof CyberSound !== 'undefined') CyberSound.click();
+
+    const overlay = document.getElementById('radarOverlay');
+    const phaseScanning = document.getElementById('radarPhaseScanning');
+    const phaseResults = document.getElementById('radarPhaseResults');
+    const progressFill = document.getElementById('radarProgressFill');
+    const statusLine = document.getElementById('radarStatusLine');
+    const radarFS = phaseScanning.querySelector('.radar-fullscreen');
+
+    // Reset state
+    overlay.className = 'radar-overlay active';
+    phaseScanning.style.display = '';
+    phaseResults.style.display = 'none';
+    progressFill.style.width = '0%';
+    statusLine.textContent = 'INITIALIZING SCAN...';
+    // Remove old blips
+    radarFS.querySelectorAll('.radar-fs-blip').forEach(b => b.remove());
+
+    // Start radar scan sound
+    if (typeof CyberSound !== 'undefined') CyberSound.radarScan();
+
+    // Scanning status messages
+    const scanPhases = [
+        { pct: 10,  msg: 'SCANNING NETWORK PERIMETER...' },
+        { pct: 25,  msg: 'ANALYZING LOGIN ATTEMPT PATTERNS...' },
+        { pct: 40,  msg: 'CHECKING SQL INJECTION SIGNATURES...' },
+        { pct: 55,  msg: 'INSPECTING THREAT LOG DATABASE...' },
+        { pct: 70,  msg: 'EVALUATING IP ADDRESS INTELLIGENCE...' },
+        { pct: 85,  msg: 'CROSS-REFERENCING SECURITY ALERTS...' },
+        { pct: 95,  msg: 'COMPILING THREAT ASSESSMENT...' },
+        { pct: 100, msg: 'SCAN COMPLETE — PROCESSING RESULTS...' }
+    ];
+
+    let phaseIdx = 0;
+    const phaseInterval = setInterval(() => {
+        if (phaseIdx >= scanPhases.length) {
+            clearInterval(phaseInterval);
+            return;
+        }
+        const p = scanPhases[phaseIdx];
+        progressFill.style.width = p.pct + '%';
+        statusLine.textContent = p.msg;
+        phaseIdx++;
+    }, 600);
+
+    // Fetch real data at 2s mark
+    let threatData = null;
+    setTimeout(() => {
+        fetch('/api/dashboard/stats')
+            .then(r => r.json())
+            .then(data => { threatData = data; })
+            .catch(() => { threatData = null; });
+    }, 1500);
+
+    // After 5 seconds — show results
+    setTimeout(() => {
+        clearInterval(phaseInterval);
+        if (typeof CyberSound !== 'undefined') CyberSound.radarScanStop();
+        progressFill.style.width = '100%';
+        statusLine.textContent = 'ANALYSIS COMPLETE';
+
+        // Get data from page or API
+        const failedLogins = (threatData && threatData.failed_24h) || {{ failed_logins }};
+        const sqliCount = {{ sqli_count }};
+        const riskScore = (threatData && threatData.risk_score) || {{ risk_score }};
+
+        // Add blips based on threat level
+        if (sqliCount > 0) {
+            addBlip(radarFS, 'crit', '18%', '65%');
+            addBlip(radarFS, 'crit', '30%', '75%');
+        }
+        if (failedLogins > 0) {
+            addBlip(radarFS, 'warn', '45%', '25%');
+            if (failedLogins > 3) addBlip(radarFS, 'warn', '60%', '20%');
+        }
+        if (sqliCount === 0 && failedLogins === 0) {
+            addBlip(radarFS, 'safe', '35%', '50%');
+        }
+
+        // Delay before showing results with voice
+        setTimeout(() => {
+            phaseScanning.style.display = 'none';
+            showRadarResults(failedLogins, sqliCount, riskScore);
+        }, 1000);
+
+    }, 5000);
+}
+
+function addBlip(container, type, top, left) {
+    const b = document.createElement('div');
+    b.className = 'radar-fs-blip fs-blip-' + type;
+    b.style.top = top;
+    b.style.left = left;
+    container.appendChild(b);
+}
+
+function showRadarResults(failedLogins, sqliCount, riskScore) {
+    const overlay = document.getElementById('radarOverlay');
+    const phase = document.getElementById('radarPhaseResults');
+    const shield = document.getElementById('radarResultsShield');
+    const title = document.getElementById('radarResultsTitle');
+    const details = document.getElementById('radarResultsDetails');
+    const items = document.getElementById('radarResultsItems');
+
+    phase.style.display = '';
+
+    // Determine severity
+    const hasSQLi = sqliCount > 0;
+    const hasFailures = failedLogins > 0;
+
+    if (hasSQLi) {
+        // ═══ CRITICAL: SQL INJECTION DETECTED ═══
+        overlay.classList.add('critical-bg');
+        shield.className = 'radar-results-shield shield-critical';
+        title.className = 'radar-results-title title-critical';
+        title.innerHTML = '🚨 CRITICAL THREAT DETECTED 🚨<br>SQL INJECTION ATTEMPT';
+
+        details.innerHTML = 'Your account has been targeted by SQL injection attacks.<br>' +
+            'All attempts were <strong style="color:#FF4444">BLOCKED AND LOGGED</strong>.<br>' +
+            'Immediate security review is recommended.';
+
+        items.innerHTML =
+            '<div class="radar-result-item ri-crit"><span class="ri-val" style="color:#FF0000">' + sqliCount + '</span><span class="ri-label">SQL INJECTION</span></div>' +
+            '<div class="radar-result-item ri-warn"><span class="ri-val" style="color:#FFA500">' + failedLogins + '</span><span class="ri-label">FAILED LOGINS</span></div>' +
+            '<div class="radar-result-item ' + (riskScore >= 70 ? 'ri-crit' : 'ri-warn') + '"><span class="ri-val" style="color:' + (riskScore >= 70 ? '#FF0000' : '#FFA500') + '">' + riskScore + '</span><span class="ri-label">RISK SCORE</span></div>';
+
+        // Heavy critical sound
+        if (typeof CyberSound !== 'undefined') CyberSound.radarAlertCritical();
+
+        // Heavy AI Voice — CRITICAL WARNING
+        setTimeout(() => {
+            cyberVoice('WARNING. CRITICAL SECURITY THREAT DETECTED. Someone attempted SQL injection attack on your account. ' +
+                sqliCount + ' SQL injection attempts have been detected and blocked. ' +
+                'WARNING. Someone attempted to SQL injection to hack your account. Protect your account sir. ' +
+                'Immediate action is recommended.', 0.8, 0.4);
+        }, 800);
+
+    } else if (hasFailures) {
+        // ═══ WARNING: LOGIN FAILURES DETECTED ═══
+        overlay.classList.add('warn-bg');
+        shield.className = 'radar-results-shield shield-warn';
+        title.className = 'radar-results-title title-warn';
+        title.innerHTML = '⚠️ LOGIN FAILURE DETECTED';
+
+        details.innerHTML = 'Multiple failed login attempts detected on your account.<br>' +
+            'Your account security is being monitored.';
+
+        items.innerHTML =
+            '<div class="radar-result-item ri-warn"><span class="ri-val" style="color:#FFA500">' + failedLogins + '</span><span class="ri-label">FAILED LOGINS</span></div>' +
+            '<div class="radar-result-item ' + (riskScore >= 40 ? 'ri-warn' : 'ri-safe') + '"><span class="ri-val" style="color:' + (riskScore >= 40 ? '#FFA500' : '#00FF00') + '">' + riskScore + '</span><span class="ri-label">RISK SCORE</span></div>';
+
+        // Medium warning sound
+        if (typeof CyberSound !== 'undefined') CyberSound.radarAlertWarning();
+
+        // Medium AI Voice — LOGIN FAILURE
+        setTimeout(() => {
+            cyberVoice('Attention. Login failure attempt detected. ' +
+                failedLogins + ' many times login failure detected sir. ' +
+                'Someone attempted to login to your account with wrong credentials. ' +
+                'Please review your security settings.', 0.85, 0.55);
+        }, 600);
+
+    } else {
+        // ═══ SAFE: No Threats ═══
+        shield.className = 'radar-results-shield shield-safe';
+        title.className = 'radar-results-title title-safe';
+        title.innerHTML = '✅ SYSTEM SECURE';
+
+        details.innerHTML = 'No threats detected. All systems are operating normally.<br>' +
+            'Your account is safe and protected.';
+
+        items.innerHTML =
+            '<div class="radar-result-item ri-safe"><span class="ri-val" style="color:#00FF00">0</span><span class="ri-label">THREATS</span></div>' +
+            '<div class="radar-result-item ri-safe"><span class="ri-val" style="color:#00FF00">' + riskScore + '</span><span class="ri-label">RISK SCORE</span></div>';
+
+        if (typeof CyberSound !== 'undefined') CyberSound.loginSuccess();
+
+        // Calm AI Voice — ALL CLEAR
+        setTimeout(() => {
+            cyberVoice('System scan complete. No threats detected. Your account is secure sir. All systems are operating normally.', 0.9, 0.6);
+        }, 500);
+    }
+}
+
+function closeRadarOverlay() {
+    if (typeof CyberSound !== 'undefined') {
+        CyberSound.click();
+        CyberSound.radarScanStop();
+    }
+    // Stop any ongoing speech
+    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+
+    const overlay = document.getElementById('radarOverlay');
+    overlay.classList.remove('active', 'critical-bg', 'warn-bg');
+    radarActive = false;
+}
+</script>
+{% endblock %}

@@ -1,0 +1,353 @@
+{% extends "base.html" %}
+{% block title %}Login{% endblock %}
+
+{% block extra_head %}
+{% if lockout_seconds %}
+<style>
+    /* ── Lockout Overlay ── */
+    .lockout-overlay {
+        position: fixed;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        background: rgba(10, 0, 0, 0.95);
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        animation: lockFadeIn 0.5s ease;
+    }
+    @keyframes lockFadeIn {
+        from { opacity: 0; }
+        to   { opacity: 1; }
+    }
+    .lockout-box {
+        text-align: center;
+        padding: 40px 30px;
+        max-width: 480px;
+        width: 90%;
+    }
+
+    /* Shield */
+    .lockout-shield {
+        width: 110px; height: 110px;
+        margin: 0 auto 25px;
+        position: relative;
+    }
+    .lockout-shield .shield-ring {
+        width: 110px; height: 110px;
+        border: 3px solid #FF0000;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        animation: shieldPulse 1.5s ease-in-out infinite;
+        box-shadow: 0 0 30px rgba(255,0,0,0.3), inset 0 0 20px rgba(255,0,0,0.1);
+    }
+    .lockout-shield .shield-ring i {
+        font-size: 45px;
+        color: #FF0000;
+        text-shadow: 0 0 20px rgba(255,0,0,0.5);
+        animation: shieldShake 0.6s ease-in-out infinite alternate;
+    }
+    @keyframes shieldPulse {
+        0%, 100% { box-shadow: 0 0 15px rgba(255,0,0,0.2); transform: scale(1); }
+        50%      { box-shadow: 0 0 40px rgba(255,0,0,0.5), 0 0 80px rgba(255,0,0,0.15); transform: scale(1.04); }
+    }
+    @keyframes shieldShake {
+        0%   { transform: rotate(-3deg); }
+        100% { transform: rotate(3deg); }
+    }
+
+    /* Warning Bars */
+    .lockout-bars {
+        display: flex;
+        justify-content: center;
+        gap: 4px;
+        margin-bottom: 20px;
+    }
+    .lockout-bars span {
+        width: 28px; height: 4px;
+        background: #FF0000;
+        border-radius: 2px;
+        animation: barBlink 1s ease-in-out infinite;
+    }
+    .lockout-bars span:nth-child(2) { animation-delay: 0.15s; }
+    .lockout-bars span:nth-child(3) { animation-delay: 0.3s; }
+    .lockout-bars span:nth-child(4) { animation-delay: 0.45s; }
+    .lockout-bars span:nth-child(5) { animation-delay: 0.6s; }
+    @keyframes barBlink {
+        0%, 100% { opacity: 0.3; }
+        50%      { opacity: 1; }
+    }
+
+    /* Text */
+    .lockout-title {
+        font-family: 'Orbitron', sans-serif;
+        font-size: 20px;
+        font-weight: 900;
+        color: #FF0000;
+        letter-spacing: 3px;
+        margin-bottom: 12px;
+        text-shadow: 0 0 10px rgba(255,0,0,0.3);
+        line-height: 1.4;
+    }
+    .lockout-msg {
+        font-family: 'Share Tech Mono', monospace;
+        font-size: 13px;
+        color: #cc4444;
+        line-height: 1.6;
+        margin-bottom: 30px;
+    }
+
+    /* Timer */
+    .lockout-timer {
+        width: 100px; height: 100px;
+        margin: 0 auto 20px;
+        border: 3px solid #FF0000;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        box-shadow: 0 0 20px rgba(255,0,0,0.2);
+    }
+    .lockout-timer .timer-num {
+        font-family: 'Orbitron', sans-serif;
+        font-size: 36px;
+        font-weight: 900;
+        color: #FF0000;
+        text-shadow: 0 0 10px rgba(255,0,0,0.5);
+    }
+    .lockout-timer .timer-label {
+        position: absolute;
+        bottom: -22px;
+        font-size: 10px;
+        color: #883333;
+        letter-spacing: 2px;
+    }
+
+    /* Progress Ring */
+    .timer-ring {
+        position: absolute;
+        top: -3px; left: -3px;
+        width: 106px; height: 106px;
+    }
+    .timer-ring circle {
+        fill: none;
+        stroke-width: 3;
+        transform: rotate(-90deg);
+        transform-origin: 50% 50%;
+    }
+    .timer-ring .ring-bg { stroke: #330000; }
+    .timer-ring .ring-fg {
+        stroke: #FF0000;
+        stroke-linecap: round;
+        transition: stroke-dashoffset 1s linear;
+    }
+
+    .lockout-footer {
+        margin-top: 25px;
+        font-size: 11px;
+        color: #552222;
+        letter-spacing: 1px;
+    }
+    .lockout-footer i { margin: 0 3px; }
+
+    /* Fade out */
+    .lockout-overlay.fade-out {
+        animation: lockFadeOut 0.6s ease forwards;
+    }
+    @keyframes lockFadeOut {
+        to { opacity: 0; pointer-events: none; }
+    }
+</style>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+{% if lockout_seconds %}
+<!-- ═══ LOCKOUT OVERLAY ═══ -->
+<div class="lockout-overlay" id="lockoutOverlay">
+    <div class="lockout-box">
+        <!-- Shield -->
+        <div class="lockout-shield">
+            <div class="shield-ring">
+                <i class="fas fa-shield-halved"></i>
+            </div>
+        </div>
+
+        <!-- Warning Bars -->
+        <div class="lockout-bars">
+            <span></span><span></span><span></span><span></span><span></span>
+        </div>
+
+        <!-- Message -->
+        <div class="lockout-title">YOUR 3 TIMES ARE TYPE<br>WRONG ATTEMPTS</div>
+        <p class="lockout-msg">SO TRY AGAIN AFTER SOME TIME<br>Please wait for the timer to expire.</p>
+
+        <!-- Timer -->
+        <div class="lockout-timer">
+            <svg class="timer-ring" viewBox="0 0 106 106">
+                <circle class="ring-bg" cx="53" cy="53" r="50"/>
+                <circle class="ring-fg" id="timerRing" cx="53" cy="53" r="50"
+                        stroke-dasharray="314.16" stroke-dashoffset="0"/>
+            </svg>
+            <span class="timer-num" id="timerNum">{{ lockout_seconds }}</span>
+            <span class="timer-label">SECONDS</span>
+        </div>
+
+        <div class="lockout-footer">
+            <i class="fas fa-lock"></i> SECURITY LOCKOUT ACTIVE <i class="fas fa-lock"></i>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="auth-container">
+    <!-- SQL Injection Alert Overlay -->
+    {% if sql_injection_detected %}
+    <div class="sqli-overlay" id="sqliOverlay">
+        <div class="sqli-alert">
+            <div class="sqli-shield blink-red">
+                <i class="fas fa-shield-virus"></i>
+            </div>
+            <h1 class="sqli-title">🚨 CRITICAL SECURITY BREACH ATTEMPT DETECTED 🚨</h1>
+            <p class="sqli-message">SQL Injection attack has been detected and blocked.</p>
+            <p class="sqli-details">
+                <i class="fas fa-exclamation-triangle"></i>
+                Your IP address has been logged. This incident has been reported.
+            </p>
+            <div class="sqli-severity">SEVERITY: CRITICAL</div>
+            <button class="cyber-btn cyber-btn-danger" onclick="document.getElementById('sqliOverlay').style.display='none'">
+                <i class="fas fa-times"></i> DISMISS
+            </button>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="cyber-card auth-card">
+        <!-- Header -->
+        <div class="auth-header">
+            <div class="shield-icon {% if account_locked %}blink-red{% else %}pulse-green{% endif %}">
+                <i class="fas {% if account_locked %}fa-lock{% else %}fa-shield-halved{% endif %}"></i>
+            </div>
+            <h1 class="cyber-title">CYBERSECURE</h1>
+            <p class="cyber-subtitle">Secure Authentication Portal</p>
+        </div>
+
+        <!-- Error -->
+        {% if error and not lockout_seconds %}
+        <div class="alert {% if sql_injection_detected or account_locked %}alert-critical{% else %}alert-danger{% endif %}">
+            <i class="fas {% if account_locked %}fa-lock{% elif failed_login %}fa-user-shield{% else %}fa-exclamation-triangle{% endif %}"></i>
+            {{ error }}
+            {% if failed_attempts %}
+            <div class="attempt-counter">
+                Failed Attempts: <span class="attempt-count">{{ failed_attempts }}</span>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <!-- Login Form -->
+        <form method="POST" action="{{ url_for('auth.login') }}" class="cyber-form" id="loginForm">
+            <div class="form-group">
+                <label class="cyber-label">
+                    <i class="fas fa-id-card"></i> Student ID
+                </label>
+                <input type="text" name="student_id" class="cyber-input" 
+                       placeholder="Enter your Student ID" required autocomplete="username">
+            </div>
+
+            <div class="form-group">
+                <label class="cyber-label">
+                    <i class="fas fa-lock"></i> Password
+                </label>
+                <div class="password-wrapper">
+                    <input type="password" name="password" class="cyber-input" id="loginPassword"
+                           placeholder="Enter your password" required autocomplete="current-password">
+                    <span class="password-toggle" onclick="togglePassword('loginPassword')">
+                        <i class="fas fa-eye"></i>
+                    </span>
+                </div>
+            </div>
+
+            <button type="submit" class="cyber-btn cyber-btn-primary" id="loginBtn" {% if lockout_seconds %}disabled{% endif %}>
+                <i class="fas fa-sign-in-alt"></i> 
+                {% if lockout_seconds %}LOCKED{% elif account_locked %}ACCOUNT LOCKED{% else %}SECURE LOGIN{% endif %}
+            </button>
+        </form>
+
+        <div class="auth-footer">
+            <p>Don't have an account? <a href="{{ url_for('auth.signup_step1') }}" class="cyber-link">Sign Up</a></p>
+        </div>
+
+        <!-- Security Info -->
+        <div class="security-badges">
+            <span class="badge badge-green"><i class="fas fa-lock"></i> Encrypted</span>
+            <span class="badge badge-green"><i class="fas fa-shield-halved"></i> Protected</span>
+            <span class="badge badge-green"><i class="fas fa-eye-slash"></i> Private</span>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+{% if lockout_seconds %}
+<script>
+(function(){
+    let remaining = {{ lockout_seconds }};
+    const totalSec = {{ lockout_seconds }};
+    const circumference = 314.16;
+    const numEl = document.getElementById('timerNum');
+    const ringEl = document.getElementById('timerRing');
+    const overlay = document.getElementById('lockoutOverlay');
+    const loginBtn = document.getElementById('loginBtn');
+
+    // Play lockout alarm + emergency siren sound (loops every 10s for full lockout)
+    let sirenLoopTimer = null;
+    if (typeof CyberSound !== 'undefined') {
+        CyberSound.lockoutAlarm();
+        CyberSound.sirenStart();
+        sirenLoopTimer = setInterval(function() {
+            if (typeof CyberSound !== 'undefined') CyberSound.sirenStart();
+        }, 10000);
+    }
+
+    function tick() {
+        if (remaining <= 0) {
+            // Time's up — stop siren, remove overlay, re-enable form
+            if (sirenLoopTimer) clearInterval(sirenLoopTimer);
+            if (typeof CyberSound !== 'undefined') CyberSound.sirenStop();
+            overlay.classList.add('fade-out');
+            if (loginBtn) {
+                loginBtn.disabled = false;
+                loginBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> SECURE LOGIN';
+            }
+            // Play unlock notification
+            if (typeof CyberSound !== 'undefined') CyberSound.loginSuccess();
+            return;
+        }
+        numEl.textContent = remaining;
+        const offset = circumference * (1 - remaining / totalSec);
+        ringEl.style.strokeDashoffset = offset;
+        remaining--;
+        setTimeout(tick, 1000);
+    }
+    tick();
+})();
+</script>
+{% endif %}
+<script>
+// Play alert sounds on flash messages (wrong password, threats)
+(function() {
+    const flashErrors = document.querySelectorAll('.flash-message.flash-error, .alert-danger, .alert-critical');
+    if (flashErrors.length > 0 && typeof CyberSound !== 'undefined') {
+        CyberSound.loginFailed();
+    }
+    const flashSuccess = document.querySelectorAll('.flash-message.flash-success');
+    if (flashSuccess.length > 0 && typeof CyberSound !== 'undefined') {
+        CyberSound.loginSuccess();
+    }
+})();
+</script>
+{% endblock %}

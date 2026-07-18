@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% block title %}Sign Up - Step 1{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="cyber-card auth-card">
+        <!-- Header -->
+        <div class="auth-header">
+            <div class="shield-icon">
+                <i class="fas fa-shield-halved"></i>
+            </div>
+            <h1 class="cyber-title">CYBERSECURE</h1>
+            <p class="cyber-subtitle">Create Your Secure Account</p>
+            <!-- Step Indicator -->
+            <div class="step-indicator">
+                <div class="step active">
+                    <span class="step-num">1</span>
+                    <span class="step-label">Register</span>
+                </div>
+                <div class="step-line"></div>
+                <div class="step">
+                    <span class="step-num">2</span>
+                    <span class="step-label">Verify OTP</span>
+                </div>
+                <div class="step-line"></div>
+                <div class="step">
+                    <span class="step-num">3</span>
+                    <span class="step-label">Details</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Errors -->
+        {% if errors %}
+        <div class="alert alert-danger">
+            {% for error in errors %}
+            <p><i class="fas fa-exclamation-circle"></i> {{ error }}</p>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Form -->
+        <form method="POST" action="{{ url_for('auth.signup_step1') }}" class="cyber-form" id="signupForm">
+            <div class="form-group">
+                <label class="cyber-label">
+                    <i class="fas fa-user"></i> First Name
+                </label>
+                <input type="text" name="first_name" class="cyber-input" 
+                       value="{{ first_name or '' }}" placeholder="Enter your first name" required>
+            </div>
+
+            <div class="form-group">
+                <label class="cyber-label">
+                    <i class="fas fa-user"></i> Last Name
+                </label>
+                <input type="text" name="last_name" class="cyber-input" 
+                       value="{{ last_name or '' }}" placeholder="Enter your last name" required>
+            </div>
+
+            <div class="form-group">
+                <label class="cyber-label">
+                    <i class="fas fa-id-card"></i> Student ID
+                </label>
+                <input type="text" name="student_id" class="cyber-input" 
+                       value="{{ student_id or '' }}" placeholder="Enter your student ID" required>
+            </div>
+
+            <div class="form-group">
+                <label class="cyber-label">
+                    <i class="fas fa-envelope"></i> Gmail Address
+                </label>
+                <input type="email" name="email" class="cyber-input" 
+                       value="{{ email or '' }}" placeholder="yourname@gmail.com" required>
+            </div>
+
+            <div class="form-group">
+                <label class="cyber-label">
+                    <i class="fas fa-lock"></i> Password
+                </label>
+                <div class="password-wrapper">
+                    <input type="password" name="password" class="cyber-input" id="password"
+                           placeholder="Minimum 6 characters" required minlength="6">
+                    <span class="password-toggle" onclick="togglePassword('password')">
+                        <i class="fas fa-eye"></i>
+                    </span>
+                </div>
+                <div class="password-strength" id="passwordStrength"></div>
+            </div>
+
+            <button type="submit" class="cyber-btn cyber-btn-primary">
+                <i class="fas fa-arrow-right"></i> PROCEED TO VERIFICATION
+            </button>
+        </form>
+
+        <div class="auth-footer">
+            <p>Already have an account? <a href="{{ url_for('auth.login') }}" class="cyber-link">Login</a></p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.getElementById('password').addEventListener('input', function() {
+    const strength = document.getElementById('passwordStrength');
+    const val = this.value;
+    let score = 0;
+    if (val.length >= 6) score++;
+    if (val.length >= 10) score++;
+    if (/[A-Z]/.test(val)) score++;
+    if (/[0-9]/.test(val)) score++;
+    if (/[^A-Za-z0-9]/.test(val)) score++;
+    
+    const levels = ['', 'Weak', 'Fair', 'Good', 'Strong', 'Very Strong'];
+    const colors = ['', '#FF0000', '#FF6600', '#FFA500', '#00CC00', '#00FF00'];
+    
+    strength.textContent = val ? `Password Strength: ${levels[score]}` : '';
+    strength.style.color = colors[score];
+});
+</script>
+{% endblock %}

@@ -1,0 +1,648 @@
+
+{% extends "base.html" %}
+{% block title %}Dashboard — My Details{% endblock %}
+
+{% block extra_head %}
+<style>
+    .dash-content {
+        max-width: 1000px;
+        margin: 25px auto;
+        padding: 0 20px;
+    }
+
+    /* ── Main Heading ── */
+    .main-heading {
+        text-align: center;
+        margin-bottom: 28px;
+    }
+    .main-heading .avatar {
+        width: 76px; height: 76px;
+        border-radius: 50%;
+        background: rgba(0,255,0,0.08);
+        border: 2px solid var(--neon-green);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 12px;
+        font-size: 34px;
+        color: var(--neon-green);
+        font-family: var(--font-display);
+        text-transform: uppercase;
+    }
+    .main-heading h1 {
+        font-family: var(--font-display);
+        font-size: 24px;
+        color: #fff;
+        letter-spacing: 2px;
+        margin: 0 0 4px;
+    }
+    .main-heading .sid {
+        font-family: var(--font-mono);
+        font-size: 14px;
+        color: var(--neon-green);
+        letter-spacing: 1px;
+    }
+    .main-heading .v-badge {
+        display: inline-block;
+        margin-top: 8px;
+        padding: 3px 14px;
+        border-radius: 4px;
+        font-size: 10px;
+        font-weight: bold;
+        letter-spacing: 0.5px;
+    }
+    .badge-yes { background: rgba(0,255,0,0.15); color: #00ff00; border: 1px solid #00ff0050; }
+    .badge-no  { background: rgba(255,0,0,0.15); color: #ff5555; border: 1px solid #ff000050; }
+
+    /* ── Big Details Table ── */
+    .details-panel {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        overflow: hidden;
+    }
+    .details-panel-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 24px;
+        border-bottom: 1px solid #1a1a2e;
+        background: rgba(0,255,0,0.03);
+    }
+    .details-panel-header h3 {
+        font-family: var(--font-display);
+        font-size: 14px;
+        color: var(--neon-green);
+        letter-spacing: 2px;
+        margin: 0;
+    }
+    .details-panel-header h3 i {
+        margin-right: 10px;
+        font-size: 15px;
+    }
+    .btn-card-edit {
+        background: transparent;
+        border: 1px solid var(--neon-green);
+        color: var(--neon-green);
+        padding: 6px 18px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 11px;
+        font-family: var(--font-mono);
+        letter-spacing: 1px;
+        transition: all 0.3s;
+    }
+    .btn-card-edit:hover {
+        background: rgba(0,255,0,0.12);
+        box-shadow: 0 0 12px rgba(0,255,0,0.25);
+    }
+
+    .details-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    .details-table tr {
+        border-bottom: 1px solid #0d0d1a;
+        transition: background 0.2s;
+    }
+    .details-table tr:last-child { border-bottom: none; }
+    .details-table tr:hover { background: rgba(0,255,0,0.04); }
+
+    /* Section header rows */
+    .details-table .section-row td {
+        padding: 14px 24px 8px;
+        font-family: var(--font-display);
+        font-size: 11px;
+        color: var(--neon-green);
+        letter-spacing: 2.5px;
+        text-transform: uppercase;
+        background: rgba(0,255,0,0.02);
+        border-bottom: 1px solid rgba(0,255,0,0.08);
+    }
+    .details-table .section-row td i {
+        margin-right: 8px;
+    }
+
+    .details-table td.label-cell {
+        padding: 14px 24px;
+        color: #888;
+        font-size: 11px;
+        letter-spacing: 1.2px;
+        text-transform: uppercase;
+        font-weight: 500;
+        width: 200px;
+        white-space: nowrap;
+    }
+    .details-table td.label-cell i {
+        width: 18px;
+        text-align: center;
+        margin-right: 8px;
+        color: var(--neon-green);
+        font-size: 12px;
+    }
+    .details-table td.value-cell {
+        padding: 14px 24px;
+        color: var(--text-light);
+        font-family: var(--font-mono);
+        font-size: 15px;
+        letter-spacing: 0.5px;
+    }
+    .details-table td.serial-cell {
+        padding: 14px 12px 14px 24px;
+        color: #444;
+        font-family: var(--font-mono);
+        font-size: 11px;
+        width: 40px;
+        text-align: center;
+    }
+
+    .fee-val  { color: #00FF00; font-family: var(--font-display); font-size: 18px; }
+    .dues-val { color: #FFA500; font-family: var(--font-display); font-size: 18px; }
+    .dues-zero{ color: #00FF00; font-family: var(--font-display); font-size: 18px; }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #555;
+        grid-column: 1 / -1;
+    }
+    .empty-state i { font-size: 48px; margin-bottom: 15px; display: block; }
+
+    /* ── Modals ── */
+    .modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        background: rgba(0,0,0,0.85);
+        z-index: 9000;
+        align-items: center;
+        justify-content: center;
+    }
+    .modal-overlay.active { display: flex; }
+    .modal-box {
+        background: var(--bg-secondary);
+        border: 1px solid var(--neon-green);
+        border-radius: 12px;
+        width: 520px;
+        max-width: 95vw;
+        max-height: 90vh;
+        overflow-y: auto;
+        box-shadow: 0 0 40px rgba(0,255,0,0.15);
+    }
+    .modal-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 18px 24px;
+        border-bottom: 1px solid #1a1a2e;
+    }
+    .modal-header h2 {
+        font-family: var(--font-display);
+        font-size: 16px;
+        color: var(--neon-green);
+        letter-spacing: 2px;
+    }
+    .modal-close {
+        background: none;
+        border: none;
+        color: #888;
+        font-size: 22px;
+        cursor: pointer;
+    }
+    .modal-close:hover { color: #ff5555; }
+    .modal-body { padding: 24px; }
+    .modal-form .form-group { margin-bottom: 16px; }
+    .modal-form label {
+        display: block;
+        font-size: 11px;
+        color: var(--neon-green);
+        letter-spacing: 1px;
+        margin-bottom: 5px;
+        text-transform: uppercase;
+    }
+    .modal-form input,
+    .modal-form select {
+        width: 100%;
+        padding: 9px 12px;
+        background: var(--bg-input);
+        border: 1px solid var(--border-color);
+        border-radius: 6px;
+        color: var(--text-light);
+        font-family: var(--font-mono);
+        font-size: 13px;
+        outline: none;
+    }
+    .modal-form input:focus,
+    .modal-form select:focus { border-color: var(--neon-green); }
+    .modal-form .form-row { display: flex; gap: 12px; }
+    .modal-form .form-row .form-group { flex: 1; }
+    .modal-form .btn-save {
+        width: 100%;
+        padding: 10px;
+        background: linear-gradient(135deg, #003300, #006600);
+        border: 1px solid var(--neon-green);
+        color: var(--neon-green);
+        font-family: var(--font-display);
+        font-size: 13px;
+        letter-spacing: 2px;
+        border-radius: 6px;
+        cursor: pointer;
+        margin-top: 8px;
+    }
+    .modal-form .btn-save:hover { background: linear-gradient(135deg, #004400, #008800); box-shadow: 0 0 15px rgba(0,255,0,0.3); }
+
+    .pw-modal-body {
+        padding: 30px 24px;
+        text-align: center;
+    }
+    .pw-modal-body .lock-icon { font-size: 48px; color: #FFA500; margin-bottom: 15px; }
+    .pw-modal-body p { color: #aaa; font-size: 13px; margin-bottom: 20px; }
+    .pw-modal-body input {
+        width: 100%;
+        padding: 10px 14px;
+        background: var(--bg-input);
+        border: 1px solid var(--border-color);
+        border-radius: 6px;
+        color: var(--text-light);
+        font-family: var(--font-mono);
+        font-size: 14px;
+        outline: none;
+        text-align: center;
+        margin-bottom: 15px;
+    }
+    .pw-modal-body input:focus { border-color: #FFA500; }
+    .pw-error { color: #ff5555; font-size: 12px; margin-bottom: 10px; display: none; }
+    .pw-modal-body .btn-unlock {
+        width: 100%;
+        padding: 10px;
+        background: linear-gradient(135deg, #332200, #664400);
+        border: 1px solid #FFA500;
+        color: #FFA500;
+        font-family: var(--font-display);
+        font-size: 13px;
+        letter-spacing: 2px;
+        border-radius: 6px;
+        cursor: pointer;
+    }
+    .pw-modal-body .btn-unlock:hover { background: linear-gradient(135deg, #443300, #886600); box-shadow: 0 0 15px rgba(255,165,0,0.3); }
+
+    @media (max-width: 768px) {
+        .dash-content { padding: 0 10px; }
+        .details-table td.label-cell { width: 140px; }
+        .details-table td.serial-cell { display: none; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-wrapper">
+    <!-- Top Navigation Bar -->
+    <nav class="cyber-nav">
+        <div class="nav-brand">
+            <i class="fas fa-shield-halved nav-shield"></i>
+            <span class="nav-title">CYBERSECURE</span>
+            <span class="nav-badge">DASHBOARD</span>
+        </div>
+        <div class="nav-user">
+            <a href="{{ url_for('dashboard.security_center') }}" class="cyber-btn cyber-btn-small" style="margin-right:8px;">
+                <i class="fas fa-lock"></i> Security
+            </a>
+            <span class="nav-greeting">Welcome, <strong>{{ student_name }}</strong></span>
+            <span class="nav-id">{{ student_id }}</span>
+            <a href="{{ url_for('auth.logout') }}" class="cyber-btn cyber-btn-small cyber-btn-danger">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </a>
+        </div>
+    </nav>
+
+    <div class="dash-content">
+        {% if student %}
+        <!-- ── Main Heading: Name & ID ── -->
+        <div class="main-heading">
+            <div class="avatar">{{ (student.first_name or '?')[0] }}</div>
+            <h1>{{ student.first_name }} {{ student.last_name }}</h1>
+            <div class="sid">{{ student.student_id }}</div>
+            <span class="v-badge {{ 'badge-yes' if student.is_verified else 'badge-no' }}">
+                {{ 'VERIFIED' if student.is_verified else 'NOT VERIFIED' }}
+            </span>
+        </div>
+
+        <!-- ── Full Student Details Table ── -->
+        <div class="details-panel">
+            <div class="details-panel-header">
+                <h3><i class="fas fa-id-card"></i> STUDENT DETAILS</h3>
+                <button class="btn-card-edit" onclick="requestEdit('{{ student.student_id }}')">
+                    <i class="fas fa-pen"></i> Edit Details
+                </button>
+            </div>
+            <table class="details-table">
+                <!-- ── Personal Info Section ── -->
+                <tr class="section-row">
+                    <td colspan="3"><i class="fas fa-user"></i> PERSONAL INFORMATION</td>
+                </tr>
+                <tr>
+                    <td class="serial-cell">01</td>
+                    <td class="label-cell"><i class="fas fa-envelope"></i> Email</td>
+                    <td class="value-cell">{{ student.email or '—' }}</td>
+                </tr>
+                <tr>
+                    <td class="serial-cell">02</td>
+                    <td class="label-cell"><i class="fas fa-venus-mars"></i> Gender</td>
+                    <td class="value-cell">{{ student.sex or '—' }}</td>
+                </tr>
+                <tr>
+                    <td class="serial-cell">03</td>
+                    <td class="label-cell"><i class="fas fa-calendar"></i> Age</td>
+                    <td class="value-cell">{{ student.age or '—' }}</td>
+                </tr>
+
+                <!-- ── Academic Info Section ── -->
+                <tr class="section-row">
+                    <td colspan="3"><i class="fas fa-graduation-cap"></i> ACADEMIC INFORMATION</td>
+                </tr>
+                <tr>
+                    <td class="serial-cell">04</td>
+                    <td class="label-cell"><i class="fas fa-code-branch"></i> Branch</td>
+                    <td class="value-cell">{{ student.branch or '—' }}</td>
+                </tr>
+                <tr>
+                    <td class="serial-cell">05</td>
+                    <td class="label-cell"><i class="fas fa-graduation-cap"></i> Year</td>
+                    <td class="value-cell">{{ student.year or '—' }}</td>
+                </tr>
+                <tr>
+                    <td class="serial-cell">06</td>
+                    <td class="label-cell"><i class="fas fa-layer-group"></i> Section</td>
+                    <td class="value-cell">{{ student.section or '—' }}</td>
+                </tr>
+
+                <!-- ── Location Info Section ── -->
+                <tr class="section-row">
+                    <td colspan="3"><i class="fas fa-map-marker-alt"></i> LOCATION INFORMATION</td>
+                </tr>
+                <tr>
+                    <td class="serial-cell">07</td>
+                    <td class="label-cell"><i class="fas fa-home"></i> Village</td>
+                    <td class="value-cell">{{ student.village or '—' }}</td>
+                </tr>
+                <tr>
+                    <td class="serial-cell">08</td>
+                    <td class="label-cell"><i class="fas fa-map-marker-alt"></i> State</td>
+                    <td class="value-cell">{{ student.state or '—' }}</td>
+                </tr>
+
+                <!-- ── Financial Info Section ── -->
+                <tr class="section-row">
+                    <td colspan="3"><i class="fas fa-indian-rupee-sign"></i> FINANCIAL INFORMATION</td>
+                </tr>
+                <tr>
+                    <td class="serial-cell">09</td>
+                    <td class="label-cell"><i class="fas fa-indian-rupee-sign"></i> Fee Paid</td>
+                    <td class="value-cell fee-val">₹{{ "%.0f"|format(student.fee or 0) }}</td>
+                </tr>
+                <tr>
+                    <td class="serial-cell">10</td>
+                    <td class="label-cell"><i class="fas fa-file-invoice-dollar"></i> Dues</td>
+                    <td class="value-cell {{ 'dues-val' if (student.dues or 0) > 0 else 'dues-zero' }}">₹{{ "%.0f"|format(student.dues or 0) }}</td>
+                </tr>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <i class="fas fa-user-slash"></i>
+            <p>Student record not found.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- ═══ Password Verification Modal ═══ -->
+<div class="modal-overlay" id="pwModal">
+    <div class="modal-box" style="width:400px">
+        <div class="modal-header">
+            <h2><i class="fas fa-lock"></i> OWNER ACCESS</h2>
+            <button class="modal-close" onclick="closePwModal()">&times;</button>
+        </div>
+        <div class="pw-modal-body">
+            <div class="lock-icon"><i class="fas fa-shield-halved"></i></div>
+            <p>Enter the owner password to edit student details.</p>
+            <input type="password" id="ownerPassword" placeholder="Enter owner password"
+                   onkeydown="if(event.key==='Enter')verifyOwner()">
+            <p class="pw-error" id="pwError">Incorrect password. Access denied.</p>
+            <button class="btn-unlock" onclick="verifyOwner()">
+                <i class="fas fa-unlock"></i> VERIFY & UNLOCK
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ Edit Student Modal ═══ -->
+<div class="modal-overlay" id="editModal">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h2><i class="fas fa-user-edit"></i> EDIT MY DETAILS</h2>
+            <button class="modal-close" onclick="closeEditModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form class="modal-form" id="editForm" onsubmit="return saveEdit(event)">
+                <input type="hidden" id="edit_student_id" name="student_id">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label><i class="fas fa-user"></i> First Name</label>
+                        <input type="text" id="edit_first_name" name="first_name" required>
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-user"></i> Last Name</label>
+                        <input type="text" id="edit_last_name" name="last_name" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label><i class="fas fa-envelope"></i> Email</label>
+                    <input type="email" id="edit_email" name="email" required>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label><i class="fas fa-venus-mars"></i> Gender</label>
+                        <select id="edit_sex" name="sex">
+                            <option value="">—</option>
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-calendar"></i> Age</label>
+                        <input type="number" id="edit_age" name="age" min="15" max="60">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label><i class="fas fa-code-branch"></i> Branch</label>
+                        <select id="edit_branch" name="branch">
+                            <option value="">—</option>
+                            <optgroup label="CSE Branches">
+                                <option value="CSC">CSC</option>
+                                <option value="CSD">CSD</option>
+                                <option value="CSM">CSM</option>
+                                <option value="AID">AID</option>
+                            </optgroup>
+                            <optgroup label="Other Branches">
+                                <option value="ECE">ECE</option>
+                                <option value="EEE">EEE</option>
+                                <option value="MECH">MECH</option>
+                                <option value="CIVIL">CIVIL</option>
+                                <option value="IT">IT</option>
+                                <option value="Other">Other</option>
+                            </optgroup>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-graduation-cap"></i> Year</label>
+                        <select id="edit_year" name="year">
+                            <option value="">—</option>
+                            <option value="1">1st Year</option>
+                            <option value="2">2nd Year</option>
+                            <option value="3">3rd Year</option>
+                            <option value="4">4th Year</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label><i class="fas fa-layer-group"></i> Section</label>
+                        <input type="text" id="edit_section" name="section">
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-home"></i> Village / City</label>
+                        <input type="text" id="edit_village" name="village">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label><i class="fas fa-map-marker-alt"></i> State</label>
+                    <input type="text" id="edit_state" name="state">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label><i class="fas fa-indian-rupee-sign"></i> Fee (₹)</label>
+                        <input type="number" id="edit_fee" name="fee" min="0" step="0.01">
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-file-invoice-dollar"></i> Dues (₹)</label>
+                        <input type="number" id="edit_dues" name="dues" min="0" step="0.01">
+                    </div>
+                </div>
+                <button type="submit" class="btn-save">
+                    <i class="fas fa-save"></i> SAVE CHANGES
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const OWNER_PASS = "NIKU EYNDUKURA";
+let pendingEditSid = null;
+let ownerVerified = false;
+
+// Play notification when dashboard loads
+if (typeof CyberSound !== 'undefined') CyberSound.notification();
+
+function requestEdit(sid) {
+    if (typeof CyberSound !== 'undefined') CyberSound.click();
+    pendingEditSid = sid;
+    if (ownerVerified) { openEditModal(sid); }
+    else {
+        document.getElementById('pwModal').classList.add('active');
+        document.getElementById('ownerPassword').value = '';
+        document.getElementById('pwError').style.display = 'none';
+        setTimeout(() => document.getElementById('ownerPassword').focus(), 200);
+    }
+}
+function closePwModal() {
+    if (typeof CyberSound !== 'undefined') CyberSound.click();
+    document.getElementById('pwModal').classList.remove('active');
+    pendingEditSid = null;
+}
+function verifyOwner() {
+    if (document.getElementById('ownerPassword').value === OWNER_PASS) {
+        ownerVerified = true;
+        if (typeof CyberSound !== 'undefined') CyberSound.loginSuccess();
+        document.getElementById('pwModal').classList.remove('active');
+        if (pendingEditSid) openEditModal(pendingEditSid);
+    } else {
+        if (typeof CyberSound !== 'undefined') CyberSound.loginFailed();
+        document.getElementById('pwError').style.display = 'block';
+        document.getElementById('ownerPassword').value = '';
+        document.getElementById('ownerPassword').focus();
+    }
+}
+
+function openEditModal(sid) {
+    fetch('/api/students/' + sid).then(r => r.json()).then(data => {
+        if (data.error) { alert(data.error); return; }
+        document.getElementById('edit_student_id').value = data.student_id;
+        document.getElementById('edit_first_name').value = data.first_name || '';
+        document.getElementById('edit_last_name').value = data.last_name || '';
+        document.getElementById('edit_email').value = data.email || '';
+        document.getElementById('edit_sex').value = data.sex || '';
+        document.getElementById('edit_age').value = data.age || '';
+        document.getElementById('edit_branch').value = data.branch || '';
+        document.getElementById('edit_year').value = data.year || '';
+        document.getElementById('edit_section').value = data.section || '';
+        document.getElementById('edit_village').value = data.village || '';
+        document.getElementById('edit_state').value = data.state || '';
+        document.getElementById('edit_fee').value = data.fee || 0;
+        document.getElementById('edit_dues').value = data.dues || 0;
+        document.getElementById('editModal').classList.add('active');
+        if (typeof CyberSound !== 'undefined') CyberSound.notification();
+    });
+}
+function closeEditModal() {
+    if (typeof CyberSound !== 'undefined') CyberSound.click();
+    document.getElementById('editModal').classList.remove('active');
+}
+function saveEdit(e) {
+    e.preventDefault();
+    if (typeof CyberSound !== 'undefined') CyberSound.click();
+    const fd = new FormData(document.getElementById('editForm'));
+    const data = {};
+    fd.forEach((v, k) => data[k] = v);
+    fetch('/api/students/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    }).then(r => r.json()).then(res => {
+        if (res.success) {
+            if (typeof CyberSound !== 'undefined') CyberSound.loginSuccess();
+            closeEditModal();
+            location.reload();
+        } else {
+            if (typeof CyberSound !== 'undefined') CyberSound.loginFailed();
+            alert(res.error || 'Failed to save.');
+        }
+    });
+    return false;
+}
+
+// Add typing beep sounds to all edit form inputs
+document.querySelectorAll('#editForm input, #editForm select').forEach(function(el){
+    el.addEventListener('input', function(){
+        if (typeof CyberSound !== 'undefined') CyberSound.type();
+    });
+});
+
+// Add typing sound to owner password input
+var ownerPwInput = document.getElementById('ownerPassword');
+if (ownerPwInput) {
+    ownerPwInput.addEventListener('input', function(){
+        if (typeof CyberSound !== 'undefined') CyberSound.type();
+    });
+}
+
+document.getElementById('pwModal').addEventListener('click', function(e) { if(e.target===this) closePwModal(); });
+document.getElementById('editModal').addEventListener('click', function(e) { if(e.target===this) closeEditModal(); });
+</script>
+{% endblock %}

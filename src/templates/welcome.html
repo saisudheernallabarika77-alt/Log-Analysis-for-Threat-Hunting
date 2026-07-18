@@ -1,0 +1,281 @@
+{% extends "base.html" %}
+{% block title %}Welcome — KIET{% endblock %}
+
+{% block extra_head %}
+<style>
+    #matrixCanvas { opacity: 0.06 !important; }
+    .main-wrapper { display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+
+    /* ── Welcome Container ── */
+    .welcome-page {
+        text-align: center;
+        padding: 40px 20px;
+        position: relative;
+        z-index: 10;
+        animation: pageIn 0.8s ease forwards;
+    }
+    @keyframes pageIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── Logo ── */
+    .welcome-logo {
+        width: 90px; height: 90px;
+        margin: 0 auto 20px;
+        border: 2px solid var(--neon-green);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 0 20px rgba(0,255,0,0.15);
+    }
+    .welcome-logo i {
+        font-size: 38px;
+        color: var(--neon-green);
+        text-shadow: 0 0 12px rgba(0,255,0,0.4);
+    }
+
+    /* ── Title ── */
+    .welcome-title {
+        font-family: var(--font-display);
+        font-size: 24px;
+        font-weight: 900;
+        color: var(--neon-green);
+        letter-spacing: 4px;
+        margin-bottom: 6px;
+        text-shadow: 0 0 8px rgba(0,255,0,0.2);
+    }
+    .welcome-subtitle {
+        font-family: var(--font-mono);
+        font-size: 12px;
+        color: #00cc88;
+        letter-spacing: 2px;
+        margin-bottom: 8px;
+    }
+    .welcome-tagline {
+        font-family: var(--font-mono);
+        font-size: 11px;
+        color: #555;
+        letter-spacing: 1.5px;
+        margin-bottom: 40px;
+    }
+
+    /* ── Divider ── */
+    .welcome-line {
+        width: 180px;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, var(--neon-green), transparent);
+        margin: 0 auto 35px;
+        opacity: 0.4;
+    }
+
+    /* ── Choose Label ── */
+    .choose-label {
+        font-family: var(--font-mono);
+        font-size: 12px;
+        color: #666;
+        letter-spacing: 3px;
+        text-transform: uppercase;
+        margin-bottom: 25px;
+    }
+
+    /* ── Option Cards ── */
+    .options-row {
+        display: flex;
+        gap: 24px;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+    .option-card {
+        width: 220px;
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 14px;
+        padding: 35px 20px 30px;
+        text-decoration: none;
+        transition: all 0.35s ease;
+        position: relative;
+        overflow: hidden;
+    }
+    .option-card::before {
+        content: '';
+        position: absolute;
+        top: 0; left: -100%;
+        width: 100%; height: 2px;
+        background: linear-gradient(90deg, transparent, var(--neon-green), transparent);
+        transition: left 0.6s ease;
+    }
+    .option-card:hover::before { left: 100%; }
+    .option-card:hover {
+        border-color: var(--neon-green);
+        transform: translateY(-5px);
+        box-shadow: 0 8px 30px rgba(0,255,0,0.12);
+    }
+
+    .option-icon {
+        width: 60px; height: 60px;
+        margin: 0 auto 18px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        transition: all 0.35s ease;
+    }
+    .option-card:hover .option-icon {
+        transform: scale(1.1);
+    }
+
+    /* Login option */
+    .option-card.opt-login .option-icon {
+        background: rgba(0,255,0,0.08);
+        border: 1px solid rgba(0,255,0,0.25);
+        color: #00FF00;
+    }
+    .option-card.opt-login:hover .option-icon {
+        box-shadow: 0 0 20px rgba(0,255,0,0.25);
+    }
+
+    /* Signup option */
+    .option-card.opt-signup .option-icon {
+        background: rgba(0,191,255,0.08);
+        border: 1px solid rgba(0,191,255,0.25);
+        color: #00BFFF;
+    }
+    .option-card.opt-signup:hover .option-icon {
+        box-shadow: 0 0 20px rgba(0,191,255,0.25);
+    }
+    .option-card.opt-signup:hover {
+        border-color: #00BFFF;
+        box-shadow: 0 8px 30px rgba(0,191,255,0.1);
+    }
+    .option-card.opt-signup::before {
+        background: linear-gradient(90deg, transparent, #00BFFF, transparent);
+    }
+
+    .option-title {
+        font-family: var(--font-display);
+        font-size: 15px;
+        letter-spacing: 3px;
+        margin-bottom: 8px;
+    }
+    .opt-login .option-title { color: var(--neon-green); }
+    .opt-signup .option-title { color: #00BFFF; }
+
+    .option-desc {
+        font-family: var(--font-mono);
+        font-size: 11px;
+        color: #777;
+        line-height: 1.6;
+    }
+
+    .option-arrow {
+        margin-top: 18px;
+        font-size: 13px;
+        letter-spacing: 2px;
+        opacity: 0;
+        transition: all 0.3s;
+    }
+    .opt-login .option-arrow { color: var(--neon-green); }
+    .opt-signup .option-arrow { color: #00BFFF; }
+    .option-card:hover .option-arrow {
+        opacity: 1;
+        transform: translateX(4px);
+    }
+
+    /* ── Footer ── */
+    .welcome-footer {
+        margin-top: 45px;
+        font-size: 11px;
+        color: #333;
+        letter-spacing: 1px;
+    }
+    .welcome-footer i { color: #444; margin: 0 3px; }
+
+    /* ── Corner Brackets ── */
+    .corner { position: fixed; width: 40px; height: 40px; opacity: 0.3; }
+    .c-tl { top: 15px; left: 15px; border-top: 2px solid var(--neon-green); border-left: 2px solid var(--neon-green); }
+    .c-tr { top: 15px; right: 15px; border-top: 2px solid var(--neon-green); border-right: 2px solid var(--neon-green); }
+    .c-bl { bottom: 15px; left: 15px; border-bottom: 2px solid var(--neon-green); border-left: 2px solid var(--neon-green); }
+    .c-br { bottom: 15px; right: 15px; border-bottom: 2px solid var(--neon-green); border-right: 2px solid var(--neon-green); }
+
+    @media (max-width: 520px) {
+        .options-row { flex-direction: column; align-items: center; }
+        .option-card { width: 260px; }
+        .welcome-title { font-size: 18px; letter-spacing: 2px; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Corner Brackets -->
+<div class="corner c-tl"></div>
+<div class="corner c-tr"></div>
+<div class="corner c-bl"></div>
+<div class="corner c-br"></div>
+
+<div class="welcome-page">
+    <!-- Logo -->
+    <div class="welcome-logo">
+        <i class="fas fa-shield-halved"></i>
+    </div>
+
+    <!-- Title -->
+    <h1 class="welcome-title">KIET GROUP OF INSTITUTIONS</h1>
+    <p class="welcome-subtitle">CYBERSECURE LOG ANALYSIS &amp; THREAT HUNTING</p>
+    <p class="welcome-tagline">Multi-Level Secured System with Real-Time Alert Engine</p>
+
+    <div class="welcome-line"></div>
+
+    <!-- Choose -->
+    <p class="choose-label">Select an option to continue</p>
+
+    <div class="options-row">
+        <!-- LOGIN -->
+        <a href="{{ url_for('auth.login') }}" class="option-card opt-login">
+            <div class="option-icon">
+                <i class="fas fa-right-to-bracket"></i>
+            </div>
+            <div class="option-title">LOGIN</div>
+            <p class="option-desc">Already have an account?<br>Sign in to your dashboard.</p>
+            <div class="option-arrow">ENTER &rarr;</div>
+        </a>
+
+        <!-- SIGN UP -->
+        <a href="{{ url_for('auth.signup_step1') }}" class="option-card opt-signup">
+            <div class="option-icon">
+                <i class="fas fa-user-plus"></i>
+            </div>
+            <div class="option-title">SIGN UP</div>
+            <p class="option-desc">New student?<br>Create a secure account now.</p>
+            <div class="option-arrow">REGISTER &rarr;</div>
+        </a>
+    </div>
+
+    <!-- Footer -->
+    <div class="welcome-footer">
+        <i class="fas fa-lock"></i> Secured by Multi-Level Authentication <i class="fas fa-lock"></i>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Hover & click sounds for option cards
+(function(){
+    var cards = document.querySelectorAll('.option-card');
+    cards.forEach(function(card){
+        card.addEventListener('mouseenter', function(){
+            if (typeof CyberSound !== 'undefined') CyberSound.hover();
+        });
+        card.addEventListener('click', function(){
+            if (typeof CyberSound !== 'undefined') {
+                CyberSound.click();
+                CyberSound.transition();
+            }
+        });
+    });
+})();
+</script>
+{% endblock %}

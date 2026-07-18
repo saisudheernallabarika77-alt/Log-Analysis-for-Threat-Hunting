@@ -1,0 +1,681 @@
+{% extends "base.html" %}
+{% block title %}Student Details{% endblock %}
+
+{% block extra_head %}
+<style>
+    .students-container {
+        max-width: 1300px;
+        margin: 30px auto;
+        padding: 0 20px;
+    }
+
+    /* ── Header Bar ── */
+    .page-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 25px;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+    .page-header h1 {
+        font-family: var(--font-display);
+        font-size: 22px;
+        color: var(--neon-green);
+        letter-spacing: 3px;
+    }
+    .page-header h1 i { margin-right: 10px; }
+
+    .header-actions {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+    }
+
+    /* ── Search ── */
+    .search-box {
+        display: flex;
+        align-items: center;
+        background: var(--bg-input);
+        border: 1px solid var(--border-color);
+        border-radius: 6px;
+        padding: 6px 12px;
+    }
+    .search-box i { color: #555; margin-right: 8px; }
+    .search-box input {
+        background: transparent;
+        border: none;
+        outline: none;
+        color: var(--text-light);
+        font-family: var(--font-mono);
+        font-size: 13px;
+        width: 180px;
+    }
+
+    /* ── Stats Row ── */
+    .stats-row {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+    }
+    .stat-chip {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        padding: 12px 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 13px;
+    }
+    .stat-chip i { color: var(--neon-green); font-size: 18px; }
+    .stat-chip .stat-val {
+        font-family: var(--font-display);
+        font-size: 20px;
+        color: #fff;
+    }
+    .stat-chip .stat-label { color: #888; font-size: 11px; letter-spacing: 1px; }
+
+    /* ── Table Card ── */
+    .table-wrapper {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        overflow: hidden;
+    }
+    .table-scroll {
+        overflow-x: auto;
+    }
+    .students-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+        min-width: 1100px;
+    }
+    .students-table th {
+        text-align: left;
+        padding: 12px 14px;
+        color: var(--neon-green);
+        font-size: 11px;
+        letter-spacing: 1px;
+        border-bottom: 1px solid #1a1a2e;
+        background: rgba(0,255,0,0.03);
+        white-space: nowrap;
+        text-transform: uppercase;
+    }
+    .students-table td {
+        padding: 11px 14px;
+        border-bottom: 1px solid #111;
+        color: var(--text-light);
+        white-space: nowrap;
+    }
+    .students-table tr:hover { background: rgba(0,255,0,0.03); }
+    .students-table tr:last-child td { border-bottom: none; }
+
+    /* ── Badges ── */
+    .badge-verified {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 10px;
+        font-weight: bold;
+        letter-spacing: 0.5px;
+    }
+    .badge-yes { background: rgba(0,255,0,0.15); color: #00ff00; border: 1px solid #00ff0050; }
+    .badge-no  { background: rgba(255,0,0,0.15); color: #ff5555; border: 1px solid #ff000050; }
+
+    .fee-val { color: #00FF00; font-family: var(--font-display); }
+    .dues-val { color: #FFA500; font-family: var(--font-display); }
+    .dues-zero { color: #00FF00; }
+
+    /* ── Edit Button ── */
+    .btn-edit {
+        background: transparent;
+        border: 1px solid var(--neon-green);
+        color: var(--neon-green);
+        padding: 4px 10px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 11px;
+        font-family: var(--font-mono);
+        transition: all 0.3s;
+    }
+    .btn-edit:hover {
+        background: rgba(0,255,0,0.1);
+        box-shadow: 0 0 8px rgba(0,255,0,0.2);
+    }
+
+    .btn-back {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: transparent;
+        border: 1px solid var(--border-color);
+        color: var(--text-light);
+        padding: 8px 16px;
+        border-radius: 6px;
+        font-family: var(--font-mono);
+        font-size: 13px;
+        cursor: pointer;
+        text-decoration: none;
+        transition: all 0.3s;
+    }
+    .btn-back:hover { border-color: var(--neon-green); color: var(--neon-green); }
+
+    /* ── Modal ── */
+    .modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        background: rgba(0,0,0,0.85);
+        z-index: 9000;
+        align-items: center;
+        justify-content: center;
+    }
+    .modal-overlay.active { display: flex; }
+
+    .modal-box {
+        background: var(--bg-secondary);
+        border: 1px solid var(--neon-green);
+        border-radius: 12px;
+        width: 520px;
+        max-width: 95vw;
+        max-height: 90vh;
+        overflow-y: auto;
+        box-shadow: 0 0 40px rgba(0,255,0,0.15);
+    }
+    .modal-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 18px 24px;
+        border-bottom: 1px solid #1a1a2e;
+    }
+    .modal-header h2 {
+        font-family: var(--font-display);
+        font-size: 16px;
+        color: var(--neon-green);
+        letter-spacing: 2px;
+    }
+    .modal-close {
+        background: none;
+        border: none;
+        color: #888;
+        font-size: 22px;
+        cursor: pointer;
+        transition: color 0.3s;
+    }
+    .modal-close:hover { color: #ff5555; }
+
+    .modal-body { padding: 24px; }
+
+    .modal-form .form-group {
+        margin-bottom: 16px;
+    }
+    .modal-form label {
+        display: block;
+        font-size: 11px;
+        color: var(--neon-green);
+        letter-spacing: 1px;
+        margin-bottom: 5px;
+        text-transform: uppercase;
+    }
+    .modal-form input,
+    .modal-form select {
+        width: 100%;
+        padding: 9px 12px;
+        background: var(--bg-input);
+        border: 1px solid var(--border-color);
+        border-radius: 6px;
+        color: var(--text-light);
+        font-family: var(--font-mono);
+        font-size: 13px;
+        outline: none;
+        transition: border-color 0.3s;
+    }
+    .modal-form input:focus,
+    .modal-form select:focus {
+        border-color: var(--neon-green);
+    }
+    .modal-form .form-row {
+        display: flex;
+        gap: 12px;
+    }
+    .modal-form .form-row .form-group { flex: 1; }
+
+    .modal-form .btn-save {
+        width: 100%;
+        padding: 10px;
+        background: linear-gradient(135deg, #003300, #006600);
+        border: 1px solid var(--neon-green);
+        color: var(--neon-green);
+        font-family: var(--font-display);
+        font-size: 13px;
+        letter-spacing: 2px;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.3s;
+        margin-top: 8px;
+    }
+    .modal-form .btn-save:hover {
+        background: linear-gradient(135deg, #004400, #008800);
+        box-shadow: 0 0 15px rgba(0,255,0,0.3);
+    }
+
+    /* ── Password Modal ── */
+    .pw-modal-body {
+        padding: 30px 24px;
+        text-align: center;
+    }
+    .pw-modal-body .lock-icon {
+        font-size: 48px;
+        color: #FFA500;
+        margin-bottom: 15px;
+    }
+    .pw-modal-body p {
+        color: #aaa;
+        font-size: 13px;
+        margin-bottom: 20px;
+    }
+    .pw-modal-body input {
+        width: 100%;
+        padding: 10px 14px;
+        background: var(--bg-input);
+        border: 1px solid var(--border-color);
+        border-radius: 6px;
+        color: var(--text-light);
+        font-family: var(--font-mono);
+        font-size: 14px;
+        outline: none;
+        text-align: center;
+        margin-bottom: 15px;
+    }
+    .pw-modal-body input:focus { border-color: #FFA500; }
+    .pw-error {
+        color: #ff5555;
+        font-size: 12px;
+        margin-bottom: 10px;
+        display: none;
+    }
+    .pw-modal-body .btn-unlock {
+        width: 100%;
+        padding: 10px;
+        background: linear-gradient(135deg, #332200, #664400);
+        border: 1px solid #FFA500;
+        color: #FFA500;
+        font-family: var(--font-display);
+        font-size: 13px;
+        letter-spacing: 2px;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    .pw-modal-body .btn-unlock:hover {
+        background: linear-gradient(135deg, #443300, #886600);
+        box-shadow: 0 0 15px rgba(255,165,0,0.3);
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #555;
+    }
+    .empty-state i { font-size: 48px; margin-bottom: 15px; display: block; }
+    .empty-state p { font-size: 14px; }
+
+    @media (max-width: 768px) {
+        .page-header { flex-direction: column; align-items: flex-start; }
+        .stats-row { flex-direction: column; }
+        .students-container { padding: 0 10px; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="students-container">
+    <!-- Header -->
+    <div class="page-header">
+        <h1><i class="fas fa-users"></i> STUDENT DETAILS</h1>
+        <div class="header-actions">
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" id="searchInput" placeholder="Search students..." oninput="filterTable()">
+            </div>
+            <a href="{{ url_for('dashboard.home') }}" class="btn-back">
+                <i class="fas fa-arrow-left"></i> Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-row">
+        <div class="stat-chip">
+            <i class="fas fa-user-graduate"></i>
+            <div>
+                <div class="stat-val">{{ students|length }}</div>
+                <div class="stat-label">TOTAL STUDENTS</div>
+            </div>
+        </div>
+        <div class="stat-chip">
+            <i class="fas fa-check-circle" style="color:#00FF00"></i>
+            <div>
+                <div class="stat-val">{{ students|selectattr('is_verified', 'equalto', 1)|list|length }}</div>
+                <div class="stat-label">VERIFIED</div>
+            </div>
+        </div>
+        <div class="stat-chip">
+            <i class="fas fa-indian-rupee-sign" style="color:#FFA500"></i>
+            <div>
+                <div class="stat-val">₹{{ "%.0f"|format(total_dues) }}</div>
+                <div class="stat-label">TOTAL DUES</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Table -->
+    <div class="table-wrapper">
+        {% if students %}
+        <div class="table-scroll">
+            <table class="students-table" id="studentsTable">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Student ID</th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Gender</th>
+                        <th>Age</th>
+                        <th>Branch</th>
+                        <th>Year</th>
+                        <th>Section</th>
+                        <th>Village</th>
+                        <th>State</th>
+                        <th>Fee (₹)</th>
+                        <th>Dues (₹)</th>
+                        <th>Verified</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for s in students %}
+                    <tr data-sid="{{ s.student_id }}">
+                        <td>{{ loop.index }}</td>
+                        <td><code>{{ s.student_id }}</code></td>
+                        <td>{{ s.first_name }} {{ s.last_name }}</td>
+                        <td>{{ s.email }}</td>
+                        <td>{{ s.sex or '—' }}</td>
+                        <td>{{ s.age or '—' }}</td>
+                        <td>{{ s.branch or '—' }}</td>
+                        <td>{{ s.year or '—' }}</td>
+                        <td>{{ s.section or '—' }}</td>
+                        <td>{{ s.village or '—' }}</td>
+                        <td>{{ s.state or '—' }}</td>
+                        <td class="fee-val">{{ "%.0f"|format(s.fee or 0) }}</td>
+                        <td class="{{ 'dues-val' if (s.dues or 0) > 0 else 'dues-zero' }}">{{ "%.0f"|format(s.dues or 0) }}</td>
+                        <td>
+                            <span class="badge-verified {{ 'badge-yes' if s.is_verified else 'badge-no' }}">
+                                {{ 'YES' if s.is_verified else 'NO' }}
+                            </span>
+                        </td>
+                        <td>
+                            <button class="btn-edit" onclick="requestEdit('{{ s.student_id }}')">
+                                <i class="fas fa-pen"></i> Edit
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <i class="fas fa-user-slash"></i>
+            <p>No students registered yet.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- ═══ Password Verification Modal ═══ -->
+<div class="modal-overlay" id="pwModal">
+    <div class="modal-box" style="width:400px">
+        <div class="modal-header">
+            <h2><i class="fas fa-lock"></i> OWNER ACCESS</h2>
+            <button class="modal-close" onclick="closePwModal()">&times;</button>
+        </div>
+        <div class="pw-modal-body">
+            <div class="lock-icon"><i class="fas fa-shield-halved"></i></div>
+            <p>Enter the owner password to edit student details.</p>
+            <input type="password" id="ownerPassword" placeholder="Enter owner password" 
+                   onkeydown="if(event.key==='Enter')verifyOwner()">
+            <p class="pw-error" id="pwError">Incorrect password. Access denied.</p>
+            <button class="btn-unlock" onclick="verifyOwner()">
+                <i class="fas fa-unlock"></i> VERIFY & UNLOCK
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ Edit Student Modal ═══ -->
+<div class="modal-overlay" id="editModal">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h2><i class="fas fa-user-edit"></i> EDIT STUDENT</h2>
+            <button class="modal-close" onclick="closeEditModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form class="modal-form" id="editForm" onsubmit="return saveEdit(event)">
+                <input type="hidden" id="edit_student_id" name="student_id">
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label><i class="fas fa-user"></i> First Name</label>
+                        <input type="text" id="edit_first_name" name="first_name" required>
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-user"></i> Last Name</label>
+                        <input type="text" id="edit_last_name" name="last_name" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label><i class="fas fa-envelope"></i> Email</label>
+                    <input type="email" id="edit_email" name="email" required>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label><i class="fas fa-venus-mars"></i> Gender</label>
+                        <select id="edit_sex" name="sex">
+                            <option value="">—</option>
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-calendar"></i> Age</label>
+                        <input type="number" id="edit_age" name="age" min="15" max="60">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label><i class="fas fa-code-branch"></i> Branch</label>
+                        <select id="edit_branch" name="branch">
+                            <option value="">—</option>
+                            <optgroup label="CSE Branches">
+                                <option value="CSC">CSC</option>
+                                <option value="CSD">CSD</option>
+                                <option value="CSM">CSM</option>
+                                <option value="AID">AID</option>
+                            </optgroup>
+                            <optgroup label="Other Branches">
+                                <option value="ECE">ECE</option>
+                                <option value="EEE">EEE</option>
+                                <option value="MECH">MECH</option>
+                                <option value="CIVIL">CIVIL</option>
+                                <option value="IT">IT</option>
+                                <option value="Other">Other</option>
+                            </optgroup>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-graduation-cap"></i> Year</label>
+                        <select id="edit_year" name="year">
+                            <option value="">—</option>
+                            <option value="1">1st Year</option>
+                            <option value="2">2nd Year</option>
+                            <option value="3">3rd Year</option>
+                            <option value="4">4th Year</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label><i class="fas fa-layer-group"></i> Section</label>
+                        <input type="text" id="edit_section" name="section">
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-home"></i> Village / City</label>
+                        <input type="text" id="edit_village" name="village">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label><i class="fas fa-map-marker-alt"></i> State</label>
+                    <input type="text" id="edit_state" name="state">
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label><i class="fas fa-indian-rupee-sign"></i> Fee (₹)</label>
+                        <input type="number" id="edit_fee" name="fee" min="0" step="0.01">
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-file-invoice-dollar"></i> Dues (₹)</label>
+                        <input type="number" id="edit_dues" name="dues" min="0" step="0.01">
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-save">
+                    <i class="fas fa-save"></i> SAVE CHANGES
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const OWNER_PASS = "NIKU EYNDUKURA";
+let pendingEditSid = null;
+let ownerVerified = false;
+
+// ── Search / Filter ──
+function filterTable() {
+    const q = document.getElementById('searchInput').value.toLowerCase();
+    const rows = document.querySelectorAll('#studentsTable tbody tr');
+    rows.forEach(r => {
+        r.style.display = r.textContent.toLowerCase().includes(q) ? '' : 'none';
+    });
+}
+
+// ── Password Gate ──
+function requestEdit(sid) {
+    pendingEditSid = sid;
+    if (ownerVerified) {
+        openEditModal(sid);
+    } else {
+        document.getElementById('pwModal').classList.add('active');
+        document.getElementById('ownerPassword').value = '';
+        document.getElementById('pwError').style.display = 'none';
+        setTimeout(() => document.getElementById('ownerPassword').focus(), 200);
+    }
+}
+
+function closePwModal() {
+    document.getElementById('pwModal').classList.remove('active');
+    pendingEditSid = null;
+}
+
+function verifyOwner() {
+    const pw = document.getElementById('ownerPassword').value;
+    if (pw === OWNER_PASS) {
+        ownerVerified = true;
+        document.getElementById('pwModal').classList.remove('active');
+        if (pendingEditSid) openEditModal(pendingEditSid);
+    } else {
+        document.getElementById('pwError').style.display = 'block';
+        document.getElementById('ownerPassword').value = '';
+        document.getElementById('ownerPassword').focus();
+    }
+}
+
+// ── Edit Modal ──
+function openEditModal(sid) {
+    // Fetch student data
+    fetch('/api/students/' + sid)
+        .then(r => r.json())
+        .then(data => {
+            if (data.error) { alert(data.error); return; }
+            document.getElementById('edit_student_id').value = data.student_id;
+            document.getElementById('edit_first_name').value = data.first_name || '';
+            document.getElementById('edit_last_name').value = data.last_name || '';
+            document.getElementById('edit_email').value = data.email || '';
+            document.getElementById('edit_sex').value = data.sex || '';
+            document.getElementById('edit_age').value = data.age || '';
+            document.getElementById('edit_branch').value = data.branch || '';
+            document.getElementById('edit_year').value = data.year || '';
+            document.getElementById('edit_section').value = data.section || '';
+            document.getElementById('edit_village').value = data.village || '';
+            document.getElementById('edit_state').value = data.state || '';
+            document.getElementById('edit_fee').value = data.fee || 0;
+            document.getElementById('edit_dues').value = data.dues || 0;
+            document.getElementById('editModal').classList.add('active');
+        })
+        .catch(err => alert('Error loading student data.'));
+}
+
+function closeEditModal() {
+    document.getElementById('editModal').classList.remove('active');
+}
+
+function saveEdit(e) {
+    e.preventDefault();
+    const form = document.getElementById('editForm');
+    const fd = new FormData(form);
+    const data = {};
+    fd.forEach((v, k) => data[k] = v);
+
+    fetch('/api/students/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    })
+    .then(r => r.json())
+    .then(res => {
+        if (res.success) {
+            closeEditModal();
+            location.reload();
+        } else {
+            alert(res.error || 'Failed to save.');
+        }
+    })
+    .catch(() => alert('Network error.'));
+    return false;
+}
+
+// Close modals on overlay click
+document.getElementById('pwModal').addEventListener('click', function(e) {
+    if (e.target === this) closePwModal();
+});
+document.getElementById('editModal').addEventListener('click', function(e) {
+    if (e.target === this) closeEditModal();
+});
+</script>
+{% endblock %}

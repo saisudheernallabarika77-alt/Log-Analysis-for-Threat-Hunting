@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BLOCKED</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: #000;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            font-family: 'Share Tech Mono', monospace;
+        }
+
+        /* ── Red Vignette ── */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: radial-gradient(ellipse at center, transparent 40%, rgba(80,0,0,0.4) 100%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* ── Scan Line ── */
+        .scanline {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 3px;
+            background: linear-gradient(90deg, transparent, #ff0000, transparent);
+            box-shadow: 0 0 20px #ff0000;
+            animation: scanMove 2s linear infinite;
+            opacity: 0.5;
+            z-index: 1;
+        }
+        @keyframes scanMove {
+            0%   { top: 0; }
+            50%  { top: 100%; }
+            100% { top: 0; }
+        }
+
+        /* ── Content ── */
+        .blocked-page {
+            text-align: center;
+            z-index: 10;
+            position: relative;
+            animation: pageEnter 0.6s ease;
+        }
+        @keyframes pageEnter {
+            from { opacity: 0; transform: scale(0.9); }
+            to   { opacity: 1; transform: scale(1); }
+        }
+
+        /* ── Shield ── */
+        .shield-wrap {
+            width: 140px; height: 140px;
+            margin: 0 auto 30px;
+            position: relative;
+        }
+        .shield-outer {
+            width: 140px; height: 140px;
+            border: 3px solid #ff0000;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: shieldBreathe 1.8s ease-in-out infinite;
+            box-shadow: 0 0 40px rgba(255,0,0,0.3), inset 0 0 30px rgba(255,0,0,0.08);
+        }
+        .shield-outer::before {
+            content: '';
+            position: absolute;
+            width: 100%; height: 100%;
+            border-radius: 50%;
+            border: 2px dashed rgba(255,0,0,0.25);
+            animation: ringSpin 8s linear infinite;
+        }
+        .shield-outer i {
+            font-size: 55px;
+            color: #ff0000;
+            text-shadow: 0 0 30px rgba(255,0,0,0.6);
+            animation: iconShake 0.5s ease-in-out infinite alternate;
+        }
+
+        @keyframes shieldBreathe {
+            0%, 100% { transform: scale(1); box-shadow: 0 0 20px rgba(255,0,0,0.2); }
+            50%      { transform: scale(1.06); box-shadow: 0 0 50px rgba(255,0,0,0.45), 0 0 100px rgba(255,0,0,0.1); }
+        }
+        @keyframes ringSpin {
+            from { transform: rotate(0deg); }
+            to   { transform: rotate(360deg); }
+        }
+        @keyframes iconShake {
+            0%   { transform: rotate(-4deg); }
+            100% { transform: rotate(4deg); }
+        }
+
+        /* ── Warning Bars ── */
+        .warn-bars {
+            display: flex;
+            justify-content: center;
+            gap: 5px;
+            margin-bottom: 25px;
+        }
+        .warn-bars span {
+            width: 32px; height: 4px;
+            background: #ff0000;
+            border-radius: 2px;
+            animation: barPulse 0.8s ease-in-out infinite;
+        }
+        .warn-bars span:nth-child(2) { animation-delay: 0.1s; }
+        .warn-bars span:nth-child(3) { animation-delay: 0.2s; }
+        .warn-bars span:nth-child(4) { animation-delay: 0.3s; }
+        .warn-bars span:nth-child(5) { animation-delay: 0.4s; }
+        .warn-bars span:nth-child(6) { animation-delay: 0.5s; }
+        .warn-bars span:nth-child(7) { animation-delay: 0.6s; }
+        @keyframes barPulse {
+            0%, 100% { opacity: 0.25; }
+            50%      { opacity: 1; }
+        }
+
+        /* ── Main Text ── */
+        .goodbye-text {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 52px;
+            font-weight: 900;
+            color: #ff0000;
+            letter-spacing: 8px;
+            text-shadow: 0 0 20px rgba(255,0,0,0.5), 0 0 60px rgba(255,0,0,0.15);
+            margin-bottom: 8px;
+            animation: textGlow 2s ease-in-out infinite;
+        }
+        @keyframes textGlow {
+            0%, 100% { text-shadow: 0 0 10px rgba(255,0,0,0.3); }
+            50%      { text-shadow: 0 0 25px rgba(255,0,0,0.6), 0 0 60px rgba(255,0,0,0.2); }
+        }
+
+        .goodbye-sub {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 28px;
+            font-weight: 700;
+            color: #cc0000;
+            letter-spacing: 12px;
+            margin-bottom: 30px;
+        }
+
+        .goodbye-msg {
+            font-size: 13px;
+            color: #882222;
+            letter-spacing: 2px;
+            line-height: 1.8;
+            margin-bottom: 35px;
+        }
+
+        /* ── X Marks ── */
+        .x-marks {
+            display: flex;
+            justify-content: center;
+            gap: 18px;
+            margin-bottom: 30px;
+        }
+        .x-mark {
+            width: 40px; height: 40px;
+            border: 2px solid #ff0000;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            color: #ff0000;
+            animation: xPop 0.4s ease forwards;
+            opacity: 0;
+        }
+        .x-mark:nth-child(1) { animation-delay: 0.3s; }
+        .x-mark:nth-child(2) { animation-delay: 0.6s; }
+        .x-mark:nth-child(3) { animation-delay: 0.9s; }
+        @keyframes xPop {
+            from { opacity: 0; transform: scale(0.3); }
+            to   { opacity: 1; transform: scale(1); }
+        }
+
+        /* ── Footer ── */
+        .blocked-footer {
+            font-size: 10px;
+            color: #441111;
+            letter-spacing: 2px;
+        }
+        .blocked-footer i { color: #661111; margin: 0 4px; }
+
+        /* ── Corner Marks ── */
+        .c { position: fixed; width: 50px; height: 50px; opacity: 0.35; }
+        .c-tl { top: 15px; left: 15px; border-top: 2px solid #ff0000; border-left: 2px solid #ff0000; }
+        .c-tr { top: 15px; right: 15px; border-top: 2px solid #ff0000; border-right: 2px solid #ff0000; }
+        .c-bl { bottom: 15px; left: 15px; border-bottom: 2px solid #ff0000; border-left: 2px solid #ff0000; }
+        .c-br { bottom: 15px; right: 15px; border-bottom: 2px solid #ff0000; border-right: 2px solid #ff0000; }
+
+        /* ── Floating Particles ── */
+        .particles {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+        .particle {
+            position: absolute;
+            width: 3px; height: 3px;
+            background: #ff0000;
+            border-radius: 50%;
+            opacity: 0;
+            animation: pFloat 5s ease-in-out infinite;
+        }
+        @keyframes pFloat {
+            0%   { opacity: 0; transform: translateY(100vh) scale(0); }
+            50%  { opacity: 0.5; }
+            100% { opacity: 0; transform: translateY(-20px) scale(1); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Scan Line -->
+    <div class="scanline"></div>
+
+    <!-- Corners -->
+    <div class="c c-tl"></div>
+    <div class="c c-tr"></div>
+    <div class="c c-bl"></div>
+    <div class="c c-br"></div>
+
+    <!-- Particles -->
+    <div class="particles" id="particles"></div>
+
+    <!-- Content -->
+    <div class="blocked-page">
+        <!-- Shield -->
+        <div class="shield-wrap">
+            <div class="shield-outer">
+                <i class="fas fa-shield-halved"></i>
+            </div>
+        </div>
+
+        <!-- Warning Bars -->
+        <div class="warn-bars">
+            <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+        </div>
+
+        <!-- Main Text -->
+        <div class="goodbye-text">GOOD BYE</div>
+        <div class="goodbye-sub">ATTACKER</div>
+
+        <!-- X Marks -->
+        <div class="x-marks">
+            <div class="x-mark"><i class="fas fa-xmark"></i></div>
+            <div class="x-mark"><i class="fas fa-xmark"></i></div>
+            <div class="x-mark"><i class="fas fa-xmark"></i></div>
+        </div>
+
+        <p class="goodbye-msg">
+            SQL INJECTION ATTACK DETECTED & BLOCKED<br>
+            YOUR IP HAS BEEN LOGGED & REPORTED
+        </p>
+
+        <!-- Footer -->
+        <div class="blocked-footer">
+            <i class="fas fa-lock"></i> CYBERSECURE THREAT DEFENSE SYSTEM <i class="fas fa-lock"></i>
+        </div>
+    </div>
+
+    <script>
+    // Red floating particles
+    (function(){
+        var c = document.getElementById('particles');
+        for (var i = 0; i < 25; i++) {
+            var p = document.createElement('div');
+            p.classList.add('particle');
+            p.style.left = Math.random()*100+'%';
+            p.style.animationDelay = Math.random()*5+'s';
+            p.style.animationDuration = (3+Math.random()*4)+'s';
+            var s = (2+Math.random()*3)+'px';
+            p.style.width = s; p.style.height = s;
+            c.appendChild(p);
+        }
+    })();
+
+    // ═══ Emergency Siren Sound ═══
+    (function(){
+        var ctx = null;
+        function getCtx() {
+            if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
+            if (ctx.state === 'suspended') ctx.resume();
+            return ctx;
+        }
+        var sirenInterval = null;
+        function startSiren() {
+            var c = getCtx();
+            var t = c.currentTime;
+            // Initial impact boom
+            var boom = c.createOscillator();
+            var bGain = c.createGain();
+            boom.type = 'sawtooth';
+            boom.frequency.setValueAtTime(100, t);
+            bGain.gain.setValueAtTime(0.2, t);
+            bGain.gain.exponentialRampToValueAtTime(0.001, t + 0.5);
+            boom.connect(bGain); bGain.connect(c.destination);
+            boom.start(t); boom.stop(t + 0.5);
+
+            // Noise burst
+            var len = c.sampleRate * 0.3;
+            var buf = c.createBuffer(1, len, c.sampleRate);
+            var data = buf.getChannelData(0);
+            for (var i = 0; i < len; i++) data[i] = (Math.random() * 2 - 1) * 0.3;
+            var nSrc = c.createBufferSource();
+            nSrc.buffer = buf;
+            var nGain = c.createGain();
+            nGain.gain.setValueAtTime(0.15, t);
+            nGain.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
+            nSrc.connect(nGain); nGain.connect(c.destination);
+            nSrc.start(t); nSrc.stop(t + 0.3);
+
+            // Repeating siren wail
+            var cycle = 0;
+            sirenInterval = setInterval(function() {
+                if (cycle >= 14) { clearInterval(sirenInterval); return; }
+                var now = c.currentTime;
+                // Main siren sweep
+                var o = c.createOscillator(), g = c.createGain();
+                o.type = 'sawtooth';
+                o.frequency.setValueAtTime(400, now);
+                o.frequency.linearRampToValueAtTime(900, now + 0.35);
+                o.frequency.linearRampToValueAtTime(400, now + 0.7);
+                g.gain.setValueAtTime(0.16, now);
+                g.gain.setValueAtTime(0.16, now + 0.5);
+                g.gain.exponentialRampToValueAtTime(0.001, now + 0.75);
+                o.connect(g); g.connect(c.destination);
+                o.start(now); o.stop(now + 0.75);
+                // High overtone
+                var o2 = c.createOscillator(), g2 = c.createGain();
+                o2.type = 'square';
+                o2.frequency.setValueAtTime(800, now);
+                o2.frequency.linearRampToValueAtTime(1600, now + 0.35);
+                o2.frequency.linearRampToValueAtTime(800, now + 0.7);
+                g2.gain.setValueAtTime(0.07, now);
+                g2.gain.exponentialRampToValueAtTime(0.001, now + 0.7);
+                o2.connect(g2); g2.connect(c.destination);
+                o2.start(now); o2.stop(now + 0.75);
+                cycle++;
+            }, 750);
+        }
+
+        // Auto-play siren, fallback to ANY first interaction
+        var played = false;
+        function play() {
+            if (played) return;
+            played = true;
+            startSiren();
+        }
+        setTimeout(play, 200);
+        document.addEventListener('click', play, { once: true });
+        document.addEventListener('touchstart', play, { once: true });
+        document.addEventListener('mousemove', play, { once: true });
+        document.addEventListener('keydown', play, { once: true });
+        document.addEventListener('scroll', play, { once: true });
+    })();
+    </script>
+</body>
+</html>
