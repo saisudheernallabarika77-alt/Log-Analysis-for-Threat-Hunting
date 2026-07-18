@@ -1,1 +1,3 @@
-Invalid switch - /\nsrc
+venv/
+src/.venv/
+__pycache__/
